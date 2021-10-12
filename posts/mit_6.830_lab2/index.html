@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+        <title>MIT 6.830 Lab2 simpleDB Operators - TYH | BLOG</title><meta name="Description" content=""><meta property="og:title" content="MIT 6.830 Lab2 simpleDB Operators" />
+<meta property="og:description" content="Lab 2 SimpleDB Operators Outlines  实现操作符 Filter, Join  已提供 Project, OrderBy 的实现供参考   实现 IntegerAggregator, StringAggregator 实现操作符 Aggregate 实现 BufferPool 中与元祖插入、删除和页面驱逐相关的方法（暂不考虑事务） 实现操作符 Insert, Delete  导致页面变脏，调用 BufferPool 的相关方法进行处理    Exercise 1: Filter and Join  Filter: This operator only returns tuples that satisfy a Predicate that is specified as part of its constructor. Hence, it filters out any tuples that do not match the predicate." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://tangyiheng2021.github.io/posts/mit_6.830_lab2/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-10-12T20:35:47+08:00" />
+<meta property="article:modified_time" content="2021-10-12T20:35:47+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="MIT 6.830 Lab2 simpleDB Operators"/>
+<meta name="twitter:description" content="Lab 2 SimpleDB Operators Outlines  实现操作符 Filter, Join  已提供 Project, OrderBy 的实现供参考   实现 IntegerAggregator, StringAggregator 实现操作符 Aggregate 实现 BufferPool 中与元祖插入、删除和页面驱逐相关的方法（暂不考虑事务） 实现操作符 Insert, Delete  导致页面变脏，调用 BufferPool 的相关方法进行处理    Exercise 1: Filter and Join  Filter: This operator only returns tuples that satisfy a Predicate that is specified as part of its constructor. Hence, it filters out any tuples that do not match the predicate."/>
+<meta name="application-name" content="TYH | BLOG">
+<meta name="apple-mobile-web-app-title" content="TYH | BLOG"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab2/" /><link rel="prev" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab1/" /><link rel="next" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab3/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="stylesheet" href="/lib/fontawesome-free/all.min.css"><link rel="stylesheet" href="/lib/animate/animate.min.css"><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "MIT 6.830 Lab2 simpleDB Operators",
+        "inLanguage": "en",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/tangyiheng2021.github.io\/posts\/mit_6.830_lab2\/"
+        },"genre": "posts","keywords": "数据库","wordcount":  1163 ,
+        "url": "https:\/\/tangyiheng2021.github.io\/posts\/mit_6.830_lab2\/","datePublished": "2021-10-12T20:35:47+08:00","dateModified": "2021-10-12T20:35:47+08:00","publisher": {
+            "@type": "Organization",
+            "name": "tangyiheng"},"author": {
+                "@type": "Person",
+                "name": "tangyiheng"
+            },"description": ""
+    }
+    </script></head>
+    <body header-desktop="" header-mobile=""><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : '' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="TYH | BLOG">TYH | BLOG</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="TYH | BLOG">TYH | BLOG</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><a class="menu-item" href="/posts/" title="">文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animated flipInX">MIT 6.830 Lab2 simpleDB Operators</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>tangyiheng</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/mit-6.830/"><i class="far fa-folder fa-fw"></i>MIT 6.830</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2021-10-12">2021-10-12</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;约 1163 字&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;预计阅读 6 分钟&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#outlines">Outlines</a></li>
+    <li><a href="#exercise-1-filter-and-join">Exercise 1: Filter and Join</a></li>
+    <li><a href="#exercise-2-aggregates">Exercise 2: Aggregates</a></li>
+    <li><a href="#exercise-3-heapfile-mutability">Exercise 3: HeapFile Mutability</a></li>
+    <li><a href="#exercise-4-insertion-and-deletion">Exercise 4: Insertion and deletion</a></li>
+    <li><a href="#exercise-5-page-eviction">Exercise 5: Page eviction</a></li>
+    <li><a href="#example">Example</a></li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h1 id="lab-2-simpledb-operators">Lab 2 SimpleDB Operators</h1>
+<h2 id="outlines">Outlines</h2>
+<ul>
+<li>实现操作符 <code>Filter</code>, <code>Join</code>
+<ul>
+<li>已提供 <code>Project</code>, <code>OrderBy</code> 的实现供参考</li>
+</ul>
+</li>
+<li>实现 <code>IntegerAggregator</code>, <code>StringAggregator</code></li>
+<li>实现操作符 <code>Aggregate</code></li>
+<li>实现 <code>BufferPool</code> 中与元祖插入、删除和页面驱逐相关的方法（暂不考虑事务）</li>
+<li>实现操作符 <code>Insert</code>, <code>Delete</code>
+<ul>
+<li>导致页面变脏，调用 <code>BufferPool</code> 的相关方法进行处理</li>
+</ul>
+</li>
+</ul>
+<h2 id="exercise-1-filter-and-join">Exercise 1: Filter and Join</h2>
+<blockquote>
+<p><em><code>Filter</code></em>: This operator only returns tuples that satisfy a <code>Predicate</code> that is specified as part of its constructor. Hence, it filters out any tuples that do not match the predicate.</p>
+<p><em><code>Join</code></em>: This operator joins tuples from its two children according to a <code>JoinPredicate</code> that is passed in as part of its constructor. We only require a <strong>simple nested loops join</strong>, but you may explore more interesting join implementations. Describe your implementation in your lab writeup.</p>
+</blockquote>
+<p>实现：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>src/java/simpledb/execution/Predicate.java</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>src/java/simpledb/execution/JoinPredicate.java</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>src/java/simpledb/execution/Filter.java</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>src/java/simpledb/execution/Join.java</code></li>
+</ul>
+<p>单元测试：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>PredicateTest</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>JoinPredicateTest</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>FilterTest</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>JoinTest</code></li>
+</ul>
+<p>系统测试：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>FilterTest</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>JoinTest</code></li>
+</ul>
+<p>测试结果：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">
+</code></pre></div><p>关键代码：</p>
+<p><code>Join</code> 类的 <code>fetchNext</code> 方法：使用嵌套循环的 Join 实现，循环遍历两个表的迭代器，如果谓语条件满足，则合并两个元祖。</p>
+<p>总结：</p>
+<ul>
+<li>除了 <code>NLJ</code> 关于 Join 算子还有其他实现，效率更高
+<ul>
+<li><code>Block NLJ</code></li>
+<li><code>Indexed NLJ</code></li>
+<li><code>Merge-Join</code></li>
+<li><code>Hash-Join</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="exercise-2-aggregates">Exercise 2: Aggregates</h2>
+<blockquote>
+<p>An additional SimpleDB operator implements basic SQL aggregates with a <code>GROUP BY</code> clause. You should implement the five SQL aggregates (<code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code>, <code>MAX</code>) and support grouping. You only need to support aggregates over a single field, and grouping by a single field.</p>
+<p>In order to calculate aggregates, we use an <code>Aggregator</code> interface which merges a new tuple into the existing calculation of an aggregate. The <code>Aggregator</code> is told during construction what operation it should use for aggregation. Subsequently, the client code should call <code>Aggregator.mergeTupleIntoGroup()</code> for every tuple in the child iterator. After all tuples have been merged, the client can retrieve a OpIterator of aggregation results. Each tuple in the result is a pair of the form <code>(groupValue, aggregateValue)</code>, unless the value of the group by field was <code>Aggregator.NO_GROUPING</code>, in which case the result is a single tuple of the form <code>(aggregateValue)</code>.</p>
+<p>Note that this implementation requires space linear in the number of distinct groups. For the purposes of this lab, you do not need to worry about the situation where the number of groups exceeds available memory.</p>
+</blockquote>
+<p>实现类：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>src/java/simpledb/execution/IntegerAggregator.java</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>src/java/simpledb/execution/StringAggregator.java</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>src/java/simpledb/execution/Aggregate.java</code></li>
+</ul>
+<p>单元测试：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>IntegerAggregatorTest</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>StringAggregatorTest</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>AggregateTest</code></li>
+</ul>
+<p>系统测试：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>AggregateTest</code></li>
+</ul>
+<p>思路：</p>
+<p><code>Aggregator</code>将“把每个元祖进行分组”这个操作抽出来单独成为一个接口，这个接口有 int 和 string 两种实现，int 需要实现 count, sum, avg, min, max，而 string 只需要实现 count。</p>
+<p>实现聚集操作有两种思路，一种是排序，另一种是哈希</p>
+<ul>
+<li>排序是将所有元祖按照分组属性排好序，然后再扫一次，将相同取值的归到一组</li>
+<li>哈希是是空间换时间的思路，将相同哈希值的元祖放到同一个桶即分好组</li>
+</ul>
+<p>关键：</p>
+<ul>
+<li>merge 操作的实现，即将一个新的元祖加入到已经分好的组，或者创建一个新组，注意边分组边计算聚集结果</li>
+<li>每个算子都要求实现迭代器，注意要分组和不分组两种情况的分开处理</li>
+</ul>
+<h2 id="exercise-3-heapfile-mutability">Exercise 3: HeapFile Mutability</h2>
+<blockquote>
+<p>Now, we will begin to implement methods to support modifying tables. We begin at the level of individual pages and files. There are two main sets of operations: <strong>adding tuples and removing tuples.</strong></p>
+<p><strong>Removing tuples:</strong> To remove a tuple, you will need to implement <code>deleteTuple</code>. Tuples contain <code>RecordIDs</code> which allow you to find the page they reside on, so this should be as simple as locating the page a tuple belongs to and modifying the headers of the page appropriately.</p>
+<p><strong>Adding tuples:</strong> The <code>insertTuple</code> method in <code>HeapFile.java</code> is responsible for adding a tuple to a heap file. To add a new tuple to a HeapFile, you will have to find a page with an empty slot. If no such pages exist in the HeapFile, you need to create a new page and append it to the physical file on disk. You will need to ensure that the RecordID in the tuple is updated correctly.</p>
+</blockquote>
+<p>需要实现修改表的两种具体操作：增加元祖和删除元祖</p>
+<ul>
+<li>增加元祖：实现<code>deleteTuple</code>方法，元祖包含的<code>RecordIDs</code>可以帮助定位元祖所在页面。首先定位被删除元祖所在页面的位置，然后同时修改页面的头部信息（表示对应的槽位未被使用）（逻辑删除）。</li>
+<li>删除元祖：实现<code>insertTuple</code>方法，为了向<code>HeapFile</code>添加新的元祖，首先要找到至少拥有一个空位的页面，如果没有这样的页面存在，则需要创建一个新的页面，然后将其追加到磁盘的物理文件末尾，同时确保<code>RecordID</code>被正确更新。</li>
+</ul>
+<p>需要修改的类</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>src/java/simpledb/storage/HeapPage.java</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>src/java/simpledb/storage/HeapFile.java</code>
+(Note that you do not necessarily need to implement <code>writePage</code> at this point).</li>
+</ul>
+<blockquote>
+<p>To implement HeapPage, you will need to modify the header bitmap for methods such as <code>insertTuple()</code> and <code>deleteTuple()</code>. You may find that the <code>getNumEmptySlots()</code> and <code>isSlotUsed()</code> methods we asked you to implement in Lab 1 serve as useful abstractions. Note that there is a <code>markSlotUsed</code> method provided as an abstraction to modify the filled or cleared status of a tuple in the page header.</p>
+<p>Note that it is important that the <code>HeapFile.insertTuple()</code> and <code>HeapFile.deleteTuple()</code> methods access pages using the <code>BufferPool.getPage()</code> method; otherwise, your implementation of transactions in the next lab will not work properly.</p>
+<p>Implement the following skeleton methods in <code>src/simpledb/BufferPool.java</code>:</p>
+<ul>
+<li><code>insertTuple()</code></li>
+<li><code>deleteTuple()</code></li>
+</ul>
+<p>These methods should call the appropriate methods in the HeapFile that belong to the table being modified (this extra level of indirection is needed to support other types of files — like indices — in the future).</p>
+<p>At this point, your code should pass the unit tests in <code>HeapPageWriteTest</code> and <code>HeapFileWriteTest</code>, as well as <code>BufferPoolWriteTest</code>.</p>
+</blockquote>
+<p>在<code>insertTuple()</code>和<code>deleteTuple()</code>方法内部修改页面头部的位图信息，通过<code>getNumEmptySlots()</code>和<code>isSlotUsed()</code>方法来帮助判断单个页面的槽位的使用情况以及获取槽位的空闲数量，通过<code>markSlotUsed()</code>方法来标记对应槽位为空闲/使用。</p>
+<p><code>HeapFile</code>中的插入元祖和删除元祖这两个方法都通过缓冲池的<code>getPage()</code>方法访问页面，以确保之后的事务能够正常运行。<code>BufferPool</code>会调用堆文件的方法来实现插入和删除操作。</p>
+<p>单元测试：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>HeapPageWriteTest</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>HeapFileWriteTest</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>BufferPoolWriteTest</code></li>
+</ul>
+<h2 id="exercise-4-insertion-and-deletion">Exercise 4: Insertion and deletion</h2>
+<blockquote>
+<p>Now that you have written all of the HeapFile machinery to add and remove tuples, you will implement the <code>Insert</code> and <code>Delete</code> operators.</p>
+<p>For plans that implement <code>insert</code> and <code>delete</code> queries, the top-most operator is a special <code>Insert</code> or <code>Delete</code> operator that modifies the pages on disk. These operators return the number of affected tuples. This is implemented by <strong>returning a single tuple with one integer field, containing the count.</strong></p>
+<ul>
+<li><em>Insert</em>: This operator adds the tuples it reads from its child operator to the <code>tableid</code> specified in its constructor. It should use the <code>BufferPool.insertTuple()</code> method to do this.</li>
+<li><em>Delete</em>: This operator deletes the tuples it reads from its child operator from the <code>tableid</code> specified in its constructor. It should use the <code>BufferPool.deleteTuple()</code> method to do this.</li>
+</ul>
+</blockquote>
+<p>有了<code>HeapFile</code>的插入和删除元祖机制后，就可以去实现<code>Insert</code>和<code>Delete</code>算子了。</p>
+<p>修改磁盘上的页面，返回受影响的元祖数量。具体实现是返回一个单独的元祖，其中只有一个包含计数的字段。</p>
+<ul>
+<li><code>Insert</code>：从子算子读取到元祖迭代器，将这些元祖添加到指定<code>tableid</code>的表格。
+<ul>
+<li>使用<code>BufferPool.insertTuple()</code>完成底层插入操作。</li>
+</ul>
+</li>
+<li><code>Delete</code>：从子算子读取到元祖迭代器，将这些元祖从指定<code>tableid</code>的表格删除。
+<ul>
+<li>使用<code>BufferPool.deleteTuple()</code>完成底层删除操作。</li>
+</ul>
+</li>
+</ul>
+<p>底层插入和删除操作的调用关系：</p>
+<p><code>BufferPool.insertTuple()</code> → <code>HeapFile.insertTuple()</code> → <code>HeapPage.insertTuple()</code></p>
+<p><code>BufferPool.deleteTuple()</code> → <code>HeapFile.deleteTuple()</code> → <code>HeapPage.deleteTuple()</code></p>
+<p>需要修改的类：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>src/java/simpledb/execution/Insert.java</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>src/java/simpledb/execution/Delete.java</code></li>
+</ul>
+<p>单元测试：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>InsertTest</code></li>
+</ul>
+<p>系统测试：</p>
+<ul>
+<li>
+<p><i class="far fa-check-square fa-fw"></i> <code>InsertTest</code></p>
+</li>
+<li>
+<p><i class="far fa-check-square fa-fw"></i> <code>DeleteTest</code></p>
+</li>
+</ul>
+<h2 id="exercise-5-page-eviction">Exercise 5: Page eviction</h2>
+<blockquote>
+<p>In Lab 1, we did not correctly observe the limit on the maximum number of pages in the buffer pool defined by the constructor argument <code>numPages</code>. Now, you will choose a page eviction policy and instrument any previous code that reads or creates pages to implement your policy.</p>
+<p>When more than <code>numPages</code> pages are in the buffer pool, one page should be evicted from the pool before the next is loaded. The choice of eviction policy is up to you; it is not necessary to do something sophisticated. Describe your policy in the lab writeup.</p>
+<p>Notice that <code>BufferPool</code> asks you to implement a <code>flushAllPages()</code> method. This is not something you would ever need in a real implementation of a buffer pool. However, we need this method for testing purposes. You should never call this method from any real code.</p>
+<p>Because of the way we have implemented ScanTest.cacheTest, you will need to ensure that your flushPage and flushAllPages methods do no evict pages from the buffer pool to properly pass this test.</p>
+<p>flushAllPages should call flushPage on all pages in the BufferPool, and flushPage should write any dirty page to disk and mark it as not dirty, while leaving it in the BufferPool.</p>
+<p>The only method which should remove page from the buffer pool is evictPage, which should call flushPage on any dirty page it evicts.</p>
+</blockquote>
+<p>当缓冲池中的页数超过<code>numPages</code>时，在加载下一个页之前，应该从缓冲池中驱逐一个页。</p>
+<p>注意<code>BufferPool</code>要求你实现一个<code>flushAllPages()</code>方法。这不是你在真正实现缓冲池时需要的东西。然而，我们需要这个方法用于<!-- raw HTML omitted -->测试<!-- raw HTML omitted -->。不应该在任何真正的代码中调用这个方法。</p>
+<p>由于我们实现<code>ScanTest.cacheTest</code>的方式，你需要确保你的<code>flushPage</code>和<code>flushAllPages</code>方法<!-- raw HTML omitted -->不从缓冲池中驱逐页面<!-- raw HTML omitted -->，以正确通过这个测试。</p>
+<p><code>flushAllPages</code>应该对缓冲池中的所有页面调用<code>flushPage</code>，而<code>flushPage</code>应该<!-- raw HTML omitted --><strong>将任何脏页写入磁盘</strong>并标记为不脏，同时将其留在缓冲池中<!-- raw HTML omitted -->。</p>
+<p>唯一应该从缓冲池中移除页面的方法是<code>evictPage</code>，它应该对它驱逐的任何脏页调用<code>flushPage</code>。</p>
+<p>最后，你还应该实现<code>discardPage()</code>来从缓冲池中删除一个页面，而不把它冲到磁盘上。我们不会在本实验中测试<code>discardPage()</code>，但它在未来的实验中是必要的。</p>
+<p>需要修改的类：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>src/java/simpledb/storage/BufferPool.java</code></li>
+</ul>
+<p>系统测试：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>EvictionTest</code></li>
+</ul>
+<p>思路：</p>
+<p>实现缓冲池的LRU淘汰策略，注意并发控制，在方法上加上<code>synchronized</code>同步锁。</p>
+<p>老规矩，还是通过双向链表+哈希表来实现LRU策略。注意一下淘汰页面的同时如果页面为脏需要写入磁盘。</p>
+<h2 id="example">Example</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">Added table : data with schema INT_TYPE<span class="o">(</span>f1<span class="o">)</span>,INT_TYPE<span class="o">(</span>f2<span class="o">)</span>
+Computing table stats.
+Done.
+SimpleDB&gt; <span class="k">select</span> d.f1, d.f2 from data d<span class="p">;</span>
+Started a new transaction <span class="nv">tid</span> <span class="o">=</span> <span class="m">0</span>
+Added scan of table d
+Added <span class="k">select</span> list field d.f1
+Added <span class="k">select</span> list field d.f2
+The query plan is:
+  π<span class="o">(</span>d.f1,d.f2<span class="o">)</span>,card:0
+  <span class="p">|</span>
+scan<span class="o">(</span>data d<span class="o">)</span>
+
+d.f1    d.f2    
+------------------
+<span class="m">1</span>       <span class="m">10</span>
+<span class="m">2</span>       <span class="m">20</span>
+<span class="m">3</span>       <span class="m">30</span>
+<span class="m">4</span>       <span class="m">40</span>
+<span class="m">5</span>       <span class="m">50</span>
+
+ <span class="m">5</span> rows.
+Transaction <span class="m">0</span> committed.
+----------------
+0.09 seconds
+</code></pre></div></div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2021-10-12</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"></div>
+            <div class="post-info-share">
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/posts/mit_6.830_lab1/" class="prev" rel="prev" title="MIT 6.830 Lab1 simpleDB"><i class="fas fa-angle-left fa-fw"></i>MIT 6.830 Lab1 simpleDB</a>
+            <a href="/posts/mit_6.830_lab3/" class="next" rel="next" title="MIT 6.830 Lab3 Query Optimization">MIT 6.830 Lab3 Query Optimization<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+</article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">由 <a href="https://gohugo.io/" target="_blank" rel="noopener noreffer" title="Hugo 0.88.1">Hugo</a> 强力驱动 | 主题 - <a href="https://github.com/dillonzq/LoveIt" target="_blank" rel="noopener noreffer" title="LoveIt 0.2.10"><i class="far fa-kiss-wink-heart fa-fw"></i> LoveIt</a>
+                </div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2021</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank"></a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw"></i>
+            </a>
+        </div><script type="text/javascript" src="/lib/smooth-scroll/smooth-scroll.min.js"></script><script type="text/javascript" src="/lib/lazysizes/lazysizes.min.js"></script><script type="text/javascript" src="/lib/clipboard/clipboard.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":10},"comment":{}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

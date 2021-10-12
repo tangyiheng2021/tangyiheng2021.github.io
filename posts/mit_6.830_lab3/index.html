@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+        <title>MIT 6.830 Lab3 Query Optimization - TYH | BLOG</title><meta name="Description" content=""><meta property="og:title" content="MIT 6.830 Lab3 Query Optimization" />
+<meta property="og:description" content="Lab3 Query Optimization Outlines Main Task：
+ a selectivity estimation framework.(选择度估计框架) a cost-based optimizer.(基于代价的优化器)  Hints：
+  Implement the methods in the TableStats class that allow it to estimate selectivities of filters and cost of scans, using histograms (skeleton provided for the IntHistogram class) or some other form of statistics of your devising. Implement the methods in the JoinOptimizer class that allow it to estimate the cost and selectivities of joins." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://tangyiheng2021.github.io/posts/mit_6.830_lab3/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-10-12T20:35:49+08:00" />
+<meta property="article:modified_time" content="2021-10-12T20:35:49+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="MIT 6.830 Lab3 Query Optimization"/>
+<meta name="twitter:description" content="Lab3 Query Optimization Outlines Main Task：
+ a selectivity estimation framework.(选择度估计框架) a cost-based optimizer.(基于代价的优化器)  Hints：
+  Implement the methods in the TableStats class that allow it to estimate selectivities of filters and cost of scans, using histograms (skeleton provided for the IntHistogram class) or some other form of statistics of your devising. Implement the methods in the JoinOptimizer class that allow it to estimate the cost and selectivities of joins."/>
+<meta name="application-name" content="TYH | BLOG">
+<meta name="apple-mobile-web-app-title" content="TYH | BLOG"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab3/" /><link rel="prev" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab2/" /><link rel="next" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab4/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="stylesheet" href="/lib/fontawesome-free/all.min.css"><link rel="stylesheet" href="/lib/animate/animate.min.css"><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "MIT 6.830 Lab3 Query Optimization",
+        "inLanguage": "en",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/tangyiheng2021.github.io\/posts\/mit_6.830_lab3\/"
+        },"genre": "posts","keywords": "数据库","wordcount":  1891 ,
+        "url": "https:\/\/tangyiheng2021.github.io\/posts\/mit_6.830_lab3\/","datePublished": "2021-10-12T20:35:49+08:00","dateModified": "2021-10-12T20:35:49+08:00","publisher": {
+            "@type": "Organization",
+            "name": "tangyiheng"},"author": {
+                "@type": "Person",
+                "name": "tangyiheng"
+            },"description": ""
+    }
+    </script></head>
+    <body header-desktop="" header-mobile=""><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : '' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="TYH | BLOG">TYH | BLOG</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="TYH | BLOG">TYH | BLOG</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><a class="menu-item" href="/posts/" title="">文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animated flipInX">MIT 6.830 Lab3 Query Optimization</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>tangyiheng</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/mit-6.830/"><i class="far fa-folder fa-fw"></i>MIT 6.830</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2021-10-12">2021-10-12</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;约 1891 字&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;预计阅读 9 分钟&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#outlines">Outlines</a>
+      <ul>
+        <li><a href="#statistics-estimation">Statistics Estimation</a></li>
+      </ul>
+    </li>
+    <li><a href="#exercise-1-inthistogram"><strong>Exercise 1: IntHistogram</strong></a></li>
+    <li><a href="#exercise-2-tablestats"><strong>Exercise 2: TableStats</strong></a></li>
+    <li><a href="#exercise-3-join-cost-estimation"><strong>Exercise 3: Join Cost Estimation</strong></a>
+      <ul>
+        <li><a href="#join-cardinality">Join Cardinality</a></li>
+      </ul>
+    </li>
+    <li><a href="#exercise-4-join-ordering"><strong>Exercise 4: Join Ordering</strong></a></li>
+    <li><a href="#bonus-exercises"><strong>Bonus Exercises.</strong></a></li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h1 id="lab3-query-optimization">Lab3 Query Optimization</h1>
+<h2 id="outlines">Outlines</h2>
+<p>Main Task：</p>
+<ul>
+<li>a selectivity estimation framework.(选择度估计框架)</li>
+<li>a cost-based optimizer.(基于代价的优化器)</li>
+</ul>
+<p>Hints：</p>
+<blockquote>
+<ul>
+<li>Implement the methods in the <code>TableStats</code> class that allow it to estimate selectivities of filters and cost of scans, using histograms (skeleton provided for the <code>IntHistogram</code> class) or some other form of statistics of your devising.</li>
+<li>Implement the methods in the <code>JoinOptimizer</code> class that allow it to estimate the cost and selectivities of joins.</li>
+<li>Write the <code>orderJoins</code> method in <code>JoinOptimizer</code>. This method must produce an optimal ordering for a series of joins (likely using the Selinger algorithm), given statistics computed in the previous two steps.</li>
+</ul>
+</blockquote>
+<ul>
+<li>实现<code>TableStats</code>类用于估计<!-- raw HTML omitted -->过滤<code>filter</code><!-- raw HTML omitted -->算子的选择率和<!-- raw HTML omitted -->扫描<code>scan</code><!-- raw HTML omitted -->算子的代价，建议使用<strong>直方图</strong>。</li>
+<li>实现<code>JoinOptimizer</code>类用于估计<!-- raw HTML omitted -->连接<code>join</code><!-- raw HTML omitted -->算子的代价和选择率。</li>
+<li>实现<code>JoinOptimizer</code>中的<code>orderJoins</code>方法，在给定前两部的统计数据下，用于产生一个最佳的连接顺序（使用<strong>Selinger提出的优化器算法</strong>）</li>
+</ul>
+<p>Optimizer outline:</p>
+<blockquote>
+<p>Recall that the main idea of a cost-based optimizer is to:</p>
+<ul>
+<li>Use statistics about tables to estimate &ldquo;costs&rdquo; of different query plans. Typically, the cost of a plan is related to the cardinalities of (number of tuples produced by) intermediate joins and selections, as well as the selectivity of filter and join predicates.</li>
+<li>Use these statistics to order joins and selections in an optimal way, and to select the best implementation for join algorithms from amongst several alternatives.</li>
+</ul>
+</blockquote>
+<p>基于代价的优化器：(CBO, cost-based optimize)</p>
+<ul>
+<li>使用表的统计数据来估计不同执行计划的代价，计划的代价一般和中间连接和选择的基数<code>cardinality</code>，以及过滤和连接谓语的选择率<code>selectivity</code>有关。</li>
+<li>使用这些统计数据来对连接<code>join</code>和选择<code>select</code>的顺序进行排序，产生最优结果的排序结果，并且选择最优的<strong>连接<code>join</code>算法</strong>实现。</li>
+</ul>
+<blockquote>
+<p>The optimizer will be invoked from <code>simpledb/Parser.java</code>. You may wish to review the <a href="https://github.com/MIT-DB-Class/simple-db-hw-2021/blob/master/lab2.md#27-query-parser" target="_blank" rel="noopener noreffer">lab 2 parser exercise</a> before starting this lab. Briefly, if you have a catalog file <code>catalog.txt</code> describing your tables, you can run the parser by typing:</p>
+<p><code>java -jar dist/simpledb.jar parser catalog.txt</code></p>
+<p>When the Parser is invoked, it will compute statistics over all of the tables (using statistics code you provide). When a query is issued, the parser will convert the query into a logical plan representation and then call your query optimizer to generate an optimal plan.</p>
+</blockquote>
+<p><code>Parser</code>解析器调用查询优化器<code>Optimizer</code>，解析器负责将查询语句转换为逻辑执行计划，查询优化器负责将逻辑计划转换为最优的物理执行计划。</p>
+<p><!-- raw HTML omitted --></p>
+<blockquote>
+<ol>
+<li><code>Parser.java</code> constructs a set of table statistics (stored in the <code>statsMap</code> container) when it is initialized. It then waits for a query to be input, and calls the method <code>parseQuery</code> on that query.</li>
+<li><code>parseQuery</code> first constructs a <code>LogicalPlan</code> that represents the parsed query. <code>parseQuery</code> then calls the method <code>physicalPlan</code> on the <code>LogicalPlan</code> instance it has constructed. The <code>physicalPlan</code> method returns a <code>DBIterator</code> object that can be used to actually run the query.</li>
+</ol>
+</blockquote>
+<ul>
+<li><code>Parser</code>在初始化时构建一组表的统计数据，存储于<code>statsMap</code>中，然后等待一个查询输入，并对该查询调用<code>parseQuery</code>方法。</li>
+<li><code>parseQuery</code>首先构造一个逻辑计划<code>LogicalPlan</code>（表示解析结果），然后在逻辑计划实例上构造<code>physicalPlan</code>方法，返回一个<code>DBIterator</code>迭代器对象，用于控制实际的执行步骤。</li>
+</ul>
+<p>目标：设计<code>physicalPlan</code>方法以实现生成最佳执行计划。</p>
+<h3 id="statistics-estimation">Statistics Estimation</h3>
+<p>统计数据估计</p>
+<p>只关注<code>join</code>顺序和访问表的成本（你不用担心访问方法的差异而导致不同的成本，这里只有顺序扫描<code>SeqScan</code>），也无需担心其他算子的成本。</p>
+<p>先考虑左深层计划<code>left-deep plans</code>，后考虑进行优化以处理<code>busy plan</code>的情况。</p>
+<p>总体的执行计划的成本 = <code>join</code>成本+<code>scan</code>成本</p>
+<p>scan主要是扫描表的io成本，join主要是连接两表的cpu成本。</p>
+<p><code>cost(predicate application) = 1</code>
+<code>cost(pageScan) = SCALING_FACTOR x cost(predicate application)</code></p>
+<p>故扫描表的成本为：表页数*<code>SCALING_FACTOR</code></p>
+<p><code>select</code>选择语句的选择性<code>selectivity</code>估计问题：</p>
+<ul>
+<li><strong>第一次扫描表</strong>，获取表的最小值和最大值
+<ul>
+<li>构造桶数组，每个桶装范围内的元祖数量</li>
+</ul>
+</li>
+<li><strong>第二次扫描表</strong>，将字段对应范围的元祖填充到对应桶中</li>
+</ul>
+<p><!-- raw HTML omitted --></p>
+<h2 id="exercise-1-inthistogram"><strong>Exercise 1: IntHistogram</strong></h2>
+<blockquote>
+<p>You will need to implement some way to record table statistics for selectivity estimation. We have provided a skeleton class, <code>IntHistogram</code> that will do this. Our intent is that you calculate histograms using the bucket-based method described above, but you are free to use some other method so long as it provides reasonable selectivity estimates.</p>
+<p>We have provided a class <code>StringHistogram</code> that uses <code>IntHistogram</code> to compute selecitivites for String predicates. You may modify <code>StringHistogram</code> if you want to implement a better estimator, though you should not need to in order to complete this lab.</p>
+<p>After completing this exercise, you should be able to pass the <code>IntHistogramTest</code> unit test (you are not required to pass this test if you choose not to implement histogram-based selectivity estimation).</p>
+</blockquote>
+<p><strong>通过实现一些用于记录表的统计数据的方法，用于之后的选择性估计</strong>（<code>selectivity estimation</code>）。<code>IntHistogram</code>类通过基于桶的方法来计算直方图，来提供合理的选择性估计。</p>
+<p><code>StringHistogram</code>使用<code>IntHistogram</code>来计算字符串谓语的选择度。</p>
+<p>实现以下类：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>IntHistogram</code></li>
+</ul>
+<p>通过以下单元测试：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>IntHistogramTest</code></li>
+</ul>
+<p>计算选择度:</p>
+<p>计算单个点的选择度:<code>selectivity = (h/w) / ntup, f=const</code>
+计算一个范围的选择度:<code>selectivity = [(h_b/ntups)] * [(b_right-const)/w_b], f&gt;const</code></p>
+<h2 id="exercise-2-tablestats"><strong>Exercise 2: TableStats</strong></h2>
+<blockquote>
+<p>The class <code>TableStats</code> contains methods that compute the number of tuples and pages in a table and that estimate the selectivity of predicates over the fields of that table. The query parser we have created creates one instance of <code>TableStats</code> per table, and passes these structures into your query optimizer (which you will need in later exercises).</p>
+<p>You should fill in the following methods and classes in <code>TableStats</code>:</p>
+<ul>
+<li>Implement the <code>TableStats</code> constructor: Once you have implemented a method for tracking statistics such as histograms, you should implement the <code>TableStats</code> constructor, adding code to scan the table (possibly multiple times) to build the statistics you need.</li>
+<li>Implement <code>estimateSelectivity(int field, Predicate.Op op, Field constant)</code>: Using your statistics (e.g., an <code>IntHistogram</code> or <code>StringHistogram</code> depending on the type of the field), estimate the selectivity of predicate <code>field op constant</code> on the table.</li>
+<li>Implement <code>estimateScanCost()</code>: This method estimates the cost of sequentially scanning the file, given that the cost to read a page is <code>costPerPageIO</code>. You can assume that there are no seeks and that no pages are in the buffer pool. This method may use costs or sizes you computed in the constructor.</li>
+<li>Implement <code>estimateTableCardinality(double selectivityFactor)</code>: This method returns the number of tuples in the relation, given that a predicate with selectivity selectivityFactor is applied. This method may use costs or sizes you computed in the constructor.</li>
+</ul>
+<p>You may wish to modify the constructor of <code>TableStats.java</code> to, for example, compute histograms over the fields as described above for purposes of selectivity estimation.</p>
+<p>After completing these tasks you should be able to pass the unit tests in <code>TableStatsTest</code>.</p>
+</blockquote>
+<p><code>TableStats</code>类包含了<strong>计算一个表中元祖和页面数量</strong>的方面、<strong>估计该表字段上的谓语的选择度</strong>的方法。</p>
+<p>解析器<code>Parser</code>为每个表创建一个<code>TableStats</code>的实例，将这些结构传递给查询优化器<code>Optimizer</code>。</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> 实现<code>TableStats</code>类：
+<ul>
+<li>
+<p><i class="far fa-check-square fa-fw"></i> <code>TableStats</code>构造函数: 为表中的每个字段创建直方图,需要用到两次扫描,第一次扫描获取最小最大值以初始化直方图,第二次扫描用于填充直方图中的每个桶.</p>
+</li>
+<li>
+<p><i class="far fa-check-square fa-fw"></i> <code>estimateSelectivity(int field, Predicate.Op op, Field constant)</code>估计选择度的函数:估计单值比较O(1)复杂度,估计范围比较O(n)复杂度</p>
+</li>
+<li>
+<p><i class="far fa-check-square fa-fw"></i> <code>estimateScanCost()</code>估计扫描成本,需要顺序便利表的所有元祖,所以是O(n)的复杂度</p>
+</li>
+<li>
+<p><i class="far fa-check-square fa-fw"></i> <code>estimateTableCardinality(double selectivityFactor)</code>估计基数（指定选择度下返回元祖数量）:简单的用选择度*表中元祖数量即可.</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>单元测试：</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>TableStatsTest</code></li>
+</ul>
+<h2 id="exercise-3-join-cost-estimation"><strong>Exercise 3: Join Cost Estimation</strong></h2>
+<h3 id="join-cardinality">Join Cardinality</h3>
+<blockquote>
+<p>Finally, observe that the cost for the join plan <code>p</code> above includes expressions of the form <code>joincost((t1 join t2) join t3)</code>. To evaluate this expression, you need some way to estimate the size (<code>ntups</code>) of <code>t1 join t2</code>. This <em>join cardinality estimation</em> problem is harder than the filter selectivity estimation problem. In this lab, you aren&rsquo;t required to do anything fancy for this, though one of the optional excercises in Section 2.4 includes a histogram-based method for join selectivity estimation.</p>
+</blockquote>
+<p>在估计<code>joincost((t1 join t2) join t3)</code>时需要某种方法来估计<code>t1 join t2</code>后的元祖数量.</p>
+<p>难度: 连接基数估计 &gt; 过滤选择度估计</p>
+<blockquote>
+<p>While implementing your simple solution, you should keep in mind the following:</p>
+<ul>
+<li>For equality joins, when one of the attributes is a primary key, the number of tuples produced by the join <strong>cannot be larger than the cardinality of the non-primary key attribute</strong>.</li>
+<li>For equality joins when there is no primary key, it&rsquo;s hard to say much about what the size of the output is &ndash; it could be the size of the product of the cardinalities of the tables (if both tables have the same value for all tuples) &ndash; or it could be 0. It&rsquo;s fine to make up a simple heuristic (say, <strong>the size of the larger of the two tables</strong>).</li>
+<li>For range scans, it is similarly hard to say anything accurate about sizes. The size of the output should be proportional to the sizes of the inputs. It is fine to assume that <strong>a fixed fraction of the cross-product is emitted by range scans (say, 30%)</strong>. In general, the cost of a range join should be larger than the cost of a non-primary key equality join of two tables of the same size.</li>
+</ul>
+</blockquote>
+<ul>
+<li>对于等值连接,当一个属性是主键时,连接所产生的元祖数量不能大于非主键属性的基数.</li>
+<li>对于没有主键的等值连接,很难估计,直接使用简单的启发式(两个表基数的较大者)</li>
+<li>对于范围扫描,很难估计,
+范围连接的成本一般来说应该大于两个相同大小表的非主键等值连接的成本</li>
+</ul>
+<blockquote>
+<p>The class <code>JoinOptimizer.java</code> includes all of the methods for ordering and computing costs of joins. In this exercise, you will write the methods for estimating the selectivity and cost of a join, specifically:</p>
+<ul>
+<li>Implement <code>estimateJoinCost(LogicalJoinNode j, int card1, int card2, double cost1, double cost2)</code>: This method estimates the cost of join j, given that the left input is of cardinality card1, the right input of cardinality card2, that the cost to scan the left input is cost1, and that the cost to access the right input is card2. You can assume the join is an NL join, and apply the formula mentioned earlier.</li>
+<li>Implement <code>estimateJoinCardinality(LogicalJoinNode j, int card1, int card2, boolean t1pkey, boolean t2pkey)</code>: This method estimates the number of tuples output by join j, given that the left input is size card1, the right input is size card2, and the flags t1pkey and t2pkey that indicate whether the left and right (respectively) field is unique (a primary key).</li>
+</ul>
+<p>After implementing these methods, you should be able to pass the unit tests <code>estimateJoinCostTest</code> and <code>estimateJoinCardinality</code> in <code>JoinOptimizerTest.java</code>.</p>
+</blockquote>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> 实现<code>JoinOptimizer</code>类: 用于对连接顺序进行排序,以及计算连接成本
+本练习中,重点实现估算连接选择性和连接成本的方法
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>estimateJoinCost(LogicalJoinNode j, int card1, int card2, double cost1, double cost2) </code>
+估计一对连接的成本. <code>card1</code>, <code>card2</code>分别是两表的基数, <code>cost1</code>, <code>cost2</code>分别是扫描两表的成本.</li>
+<li><i class="far fa-check-square fa-fw"></i> <code>estimateJoinCardinality(LogicalJoinNode j, int card1, int card2, boolean t1pkey, boolean t2pkey)</code>
+估计一对连接的基数.  <code>card1</code>, <code>card2</code>分别是两表的基数, <code>t1pkey</code>, <code>t2pkey</code>用于表示字段取值是否唯一.(即是否为主键)</li>
+</ul>
+</li>
+</ul>
+<p>单元测试:</p>
+<ul>
+<li><code>JoinOptimizerTest.java</code>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>estimateJoinCostTest</code></li>
+<li><i class="far fa-check-square fa-fw"></i> <code>estimateJoinCardinality</code></li>
+</ul>
+</li>
+</ul>
+<p>估计 <code>p=t1 join t2 join ... tn</code> 的成本:</p>
+<pre tabindex="0"><code>scancost(t1) + scancost(t2) + joincost(t1 join t2) +
+scancost(t3) + joincost((t1 join t2) join t3) +
+... 
+</code></pre><p>估计 <code>joincost(t1 join t2)</code> 的成本:</p>
+<pre tabindex="0"><code>joincost(t1 join t2) = scancost(t1) + ntups(t1) x scancost(t2) //IO cost
+                       + ntups(t1) x ntups(t2)  //CPU cost
+</code></pre><p>估计代价时直接上公式就好,估计基数时使用提示的三条启发式规则即可.(后期可以考虑进一步优化)</p>
+<h2 id="exercise-4-join-ordering"><strong>Exercise 4: Join Ordering</strong></h2>
+<p>算法伪代码:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-text" data-lang="text">1. j = set of join nodes
+2. for (i in 1...|j|):	 # 遍历每个join节点
+3.     for s in {all length i subsets of j} # 遍历每个长度为i的j子集 s
+4.       bestPlan = {}	# 当前子集 s 的最优执行计划
+5.       for s&#39; in {all length d-1 subsets of s}	# 遍历每个长度为d-1的s子集 s&#39;
+6.            subplan = optjoin(s&#39;)	# 从缓存得到 s&#39; 的最优计划
+7.            plan = best way to join (s-s&#39;) to subplan	#寻找从s-s&#39;到最优子集的最佳连接
+8.            if (cost(plan) &lt; cost(bestPlan))
+9.               bestPlan = plan	# 更新子集的最优执行计划
+10.      optjoin(s) = bestPlan	# 将子集 s 的最优计划加入缓存, 供求解上层问题使用
+11. return optjoin(j)
+</code></pre></div><ol>
+<li>
+<p><code>enumerateSubsets(List v, int size)</code>枚举列表<code>v</code>中大小为<code>size</code>的所有子集(效率比较低,存在优化空间)</p>
+</li>
+<li>
+<p><code>computeCostAndCardOfSubplan</code>求解子集的最佳连接计划</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="n">CostCard</span> <span class="nf">computeCostAndCardOfSubplan</span><span class="o">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">TableStats</span><span class="o">&gt;</span> <span class="n">stats</span><span class="o">,</span> 
+                                                <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Double</span><span class="o">&gt;</span> <span class="n">filterSelectivities</span><span class="o">,</span> 
+                                                <span class="n">LogicalJoinNode</span> <span class="n">joinToRemove</span><span class="o">,</span>  
+                                                <span class="n">Set</span><span class="o">&lt;</span><span class="n">LogicalJoinNode</span><span class="o">&gt;</span> <span class="n">joinSet</span><span class="o">,</span>
+                                                <span class="kt">double</span> <span class="n">bestCostSoFar</span><span class="o">,</span>
+                                                <span class="n">PlanCache</span> <span class="n">pc</span><span class="o">)</span> 
+
+</code></pre></div><p>给定连接子集<code>joinSet</code>和要从该集合中删除的连接<code>joinToRemove</code>,估算了将<code>joinToRemove</code>连接到<code>joinSet - {joinToRemove}</code>的最佳方式,封装到<code>CostCard</code>对象中返回最佳方法,其中包括代价、基数、最佳连接顺序.</p>
+<p>如果没有找到计划,或者所有计划的代价都大于<code>bestCostSoFar</code>参数,则该方法会返回null</p>
+<p>该方法使用之前joins的缓存<code>pc</code>,来加快查找连接<code>joinSet-{joinToRemove}</code>的最快方式</p>
+<p>其他参数如<code>stats</code>, <code>filterSelectivities</code>将传递到<code>orderJoins</code>方法中</p>
+</li>
+<li>
+<p><code>printJoins</code> 打印连接计划</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java">    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">printJoins</span><span class="o">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">LogicalJoinNode</span><span class="o">&gt;</span> <span class="n">js</span><span class="o">,</span> 
+                           <span class="n">PlanCache</span> <span class="n">pc</span><span class="o">,</span>
+                           <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">TableStats</span><span class="o">&gt;</span> <span class="n">stats</span><span class="o">,</span>
+                           <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Double</span><span class="o">&gt;</span> <span class="n">selectivities</span><span class="o">)</span>
+
+</code></pre></div><p>用于展示连接计划的图形表示(比如对优化器设置<code>explain</code>选项时)</p>
+</li>
+<li>
+<p>提供<code>PlanCache</code>类,用于缓存加入迄今为止在实现 Selinger 优化器时考虑的连接子集的最佳方式.</p>
+</li>
+</ol>
+<ul>
+<li>
+<p><i class="far fa-check-square fa-fw"></i> 实现<code>JoinOptimizer.java</code>中的以下方法:</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>orderJoins</code></li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java">  <span class="n">List</span><span class="o">&lt;</span><span class="n">LogicalJoinNode</span><span class="o">&gt;</span> <span class="nf">orderJoins</span><span class="o">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">TableStats</span><span class="o">&gt;</span> <span class="n">stats</span><span class="o">,</span> 
+                   <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Double</span><span class="o">&gt;</span> <span class="n">filterSelectivities</span><span class="o">,</span>  
+                   <span class="kt">boolean</span> <span class="n">explain</span><span class="o">)</span>
+
+</code></pre></div><p>此方法在<code>joins</code>类成员上操作,返回一个新列表,该列表指定了连接的执行顺序.(列表的第0项表示左深计划最左边最深的join),返回列表中的相邻join应该至少共享一个字段,以确保计划时左深的.这里的<code>stats</code>通过给定表名找到<code>TableStats</code>.<code>filterSelectivities</code>可以在表上找到任何谓语的选择性.<code>explain</code>表示是否打印连接顺序的图形表示.</p>
+<p>思路:遵循算法伪代码,循环遍历子集、子集的子计划,调用<code>computeCostAndCardOfSubplan</code>,并构建一个<code>PlanCache</code>对象用于存储每个连接子集方法的最低代价.</p>
+</li>
+</ul>
+<p>通过单元测试:</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>JoinOptimizerTest</code></li>
+</ul>
+<p>通过系统测试:</p>
+<ul>
+<li><i class="far fa-check-square fa-fw"></i> <code>QueryTest</code></li>
+</ul>
+<p>关键代码:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java">	<span class="cm">/**
+</span><span class="cm">     * Compute a logical, reasonably efficient join on the specified tables. See
+</span><span class="cm">     * PS4 for hints on how this should be implemented.
+</span><span class="cm">     * 
+</span><span class="cm">     * @param stats 涉及join操作相关表的统计信息
+</span><span class="cm">     *            Statistics for each table involved in the join, referenced by
+</span><span class="cm">     *            base table names, not alias
+</span><span class="cm">     * @param filterSelectivities   每张表涉及join谓语操作的选择度
+</span><span class="cm">     *            Selectivities of the filter predicates on each table in the
+</span><span class="cm">     *            join, referenced by table alias (if no alias, the base table
+</span><span class="cm">     *            name)
+</span><span class="cm">     * @param explain   是否打印join执行计划
+</span><span class="cm">     *            Indicates whether your code should explain its query plan or
+</span><span class="cm">     *            simply execute it
+</span><span class="cm">     * @return A List&lt;LogicalJoinNode&gt; that stores joins in the left-deep
+</span><span class="cm">     *         order in which they should be executed.
+</span><span class="cm">     * @throws ParsingException
+</span><span class="cm">     *             when stats or filter selectivities is missing a table in the
+</span><span class="cm">     *             join, or or when another internal error occurs
+</span><span class="cm">     */</span>
+    <span class="kd">public</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">LogicalJoinNode</span><span class="o">&gt;</span> <span class="nf">orderJoins</span><span class="o">(</span>
+            <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">TableStats</span><span class="o">&gt;</span> <span class="n">stats</span><span class="o">,</span>
+            <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Double</span><span class="o">&gt;</span> <span class="n">filterSelectivities</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">explain</span><span class="o">)</span>
+            <span class="kd">throws</span> <span class="n">ParsingException</span> <span class="o">{</span>
+
+        <span class="c1">// 构建最优join子集的缓存（包括代价值和执行计划）
+</span><span class="c1"></span>        <span class="n">PlanCache</span> <span class="n">pc</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PlanCache</span><span class="o">();</span>
+
+        <span class="c1">// 动态规划寻找最优代价的连接顺序 自底向上
+</span><span class="c1"></span>        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">1</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">joins</span><span class="o">.</span><span class="na">size</span><span class="o">();</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+            <span class="c1">// 枚举 joins 中所有长度为 i 的连接子集
+</span><span class="c1"></span>            <span class="n">Set</span><span class="o">&lt;</span><span class="n">Set</span><span class="o">&lt;</span><span class="n">LogicalJoinNode</span><span class="o">&gt;&gt;</span> <span class="n">joinSubSets</span> <span class="o">=</span> <span class="n">enumerateSubsets</span><span class="o">(</span><span class="n">joins</span><span class="o">,</span> <span class="n">i</span><span class="o">);</span>
+
+            <span class="k">for</span> <span class="o">(</span><span class="n">Set</span><span class="o">&lt;</span><span class="n">LogicalJoinNode</span><span class="o">&gt;</span> <span class="n">joinSubSet</span><span class="o">:</span> <span class="n">joinSubSets</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">List</span><span class="o">&lt;</span><span class="n">LogicalJoinNode</span><span class="o">&gt;</span> <span class="n">bestPlan</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>  <span class="c1">// 定义当前 joinSubSet 子集的最佳连接计划
+</span><span class="c1"></span>                <span class="kt">double</span> <span class="n">bestCostSoFar</span> <span class="o">=</span> <span class="n">Double</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">;</span>
+                <span class="kt">int</span> <span class="n">bestCard</span> <span class="o">=</span> <span class="n">Integer</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">;</span>
+
+                <span class="k">for</span> <span class="o">(</span><span class="n">LogicalJoinNode</span> <span class="n">joinToRemove</span><span class="o">:</span> <span class="n">joinSubSet</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="c1">// 计算 joinToRemove 和 joinSubSet - {joinToRemove} 进行连接的最佳方式
+</span><span class="c1"></span>                    <span class="c1">// 目的是用来更新最佳连接顺序 bestPlan 以及最佳连接成本 bestCostSoFar
+</span><span class="c1"></span>                    <span class="n">CostCard</span> <span class="n">costCard</span> <span class="o">=</span> <span class="n">computeCostAndCardOfSubplan</span><span class="o">(</span><span class="n">stats</span><span class="o">,</span>
+                            <span class="n">filterSelectivities</span><span class="o">,</span>
+                            <span class="n">joinToRemove</span><span class="o">,</span> <span class="n">joinSubSet</span><span class="o">,</span>
+                            <span class="n">bestCostSoFar</span><span class="o">,</span> <span class="n">pc</span><span class="o">);</span>
+                    <span class="c1">// 更新子集的最佳代价、基数及连接计划
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">costCard</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">bestPlan</span> <span class="o">=</span> <span class="n">costCard</span><span class="o">.</span><span class="na">plan</span><span class="o">;</span>
+                        <span class="n">bestCostSoFar</span> <span class="o">=</span> <span class="n">costCard</span><span class="o">.</span><span class="na">cost</span><span class="o">;</span>
+                        <span class="n">bestCard</span> <span class="o">=</span> <span class="n">costCard</span><span class="o">.</span><span class="na">card</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+              	<span class="c1">// 加入缓存
+</span><span class="c1"></span>                <span class="n">pc</span><span class="o">.</span><span class="na">addPlan</span><span class="o">(</span><span class="n">joinSubSet</span><span class="o">,</span> <span class="n">bestCostSoFar</span><span class="o">,</span> <span class="n">bestCard</span><span class="o">,</span> <span class="n">bestPlan</span><span class="o">);</span>  <span class="c1">// 在缓存中存储该 joinSubSet 子集的最佳连接计划
+</span><span class="c1"></span>            <span class="o">}</span>
+        <span class="o">}</span>
+      	<span class="c1">// 通过动态规划算法计算得到的最优连接顺序
+</span><span class="c1"></span>        <span class="n">List</span><span class="o">&lt;</span><span class="n">LogicalJoinNode</span><span class="o">&gt;</span> <span class="n">optJoinsOrder</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="na">getOrder</span><span class="o">(</span><span class="k">new</span> <span class="n">HashSet</span><span class="o">&lt;&gt;(</span><span class="n">joins</span><span class="o">));</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">explain</span><span class="o">)</span>
+            <span class="n">printJoins</span><span class="o">(</span><span class="n">optJoinsOrder</span><span class="o">,</span> <span class="n">pc</span><span class="o">,</span>
+                    <span class="n">stats</span><span class="o">,</span>
+                    <span class="n">filterSelectivities</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">optJoinsOrder</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></div><h2 id="bonus-exercises"><strong>Bonus Exercises.</strong></h2>
+<ul>
+<li>
+<p><em>Add code to perform more advanced join cardinality estimation</em>. (更高效的基数估计)</p>
+</li>
+<li>
+<p><em>Improved subset iterator</em>.</p>
+</li>
+<li>
+<p><em>A cost model that accounts for caching</em>.</p>
+</li>
+<li>
+<p><em>Improved <strong>join algorithms</strong> and algorithm selection</em>. （使用更高效的<code>join</code>连接算法）</p>
+<blockquote>
+<p>Our current cost estimation and join operator selection algorithms (see <code>instantiateJoin()</code> in <code>JoinOptimizer.java</code>) only consider nested loops joins. Extend these methods to use one or more additional join algorithms (for example, some form of in memory hashing using a <code>HashMap</code>).</p>
+<p>使用其他<code>join</code>算法如排序合并连接或者哈希连接，代替最简单的嵌套连接。</p>
+</blockquote>
+</li>
+<li>
+<p><em>Bushy plans</em>.</p>
+</li>
+</ul>
+<hr>
+<p>进一步优化:</p>
+<ul>
+<li>
+<p>==join 的基数估计方法==: 代替简单的启发式方法, 而是使用(1)联合直方图或使用(2)公式计算基数乘积.</p>
+</li>
+<li>
+<p>==改进 enumerateSubsets 子集枚举迭代器==: 它在枚举过程中创建了大量的java对象, 要想支持20及以上的join计划的查询优化, 务必首先在这个子集枚举器上进行优化</p>
+</li>
+<li>
+<p>==考虑缓存情况的代价模型==: 之前估计扫描表和连接的代价都无需考虑缓冲池的缓存, 其实应该扩展代价模型以考虑缓存带来的代价减少. very hard</p>
+</li>
+<li>
+<p>==改进join算法==: 代替简单的嵌套循环连接, 使用一个或多个额外的连接算法(如用HashMap进行hash连接, 基本思想是将每个表的元祖划分为在连接属性上具有相同hash的集合)</p>
+</li>
+<li>
+<p>==支持busy计划==: 不仅仅只支持左深树, 改进<code>orderJoins()</code> 方法以支持矮树. simpleDB提供的<!-- raw HTML omitted -->查询计划生成<!-- raw HTML omitted -->和<!-- raw HTML omitted -->可视化查询计划<!-- raw HTML omitted -->完全支持busy计划.</p>
+</li>
+</ul>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2021-10-12</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"></div>
+            <div class="post-info-share">
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/posts/mit_6.830_lab2/" class="prev" rel="prev" title="MIT 6.830 Lab2 simpleDB Operators"><i class="fas fa-angle-left fa-fw"></i>MIT 6.830 Lab2 simpleDB Operators</a>
+            <a href="/posts/mit_6.830_lab4/" class="next" rel="next" title="MIT 6.830 Lab4 Transactions">MIT 6.830 Lab4 Transactions<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+</article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">由 <a href="https://gohugo.io/" target="_blank" rel="noopener noreffer" title="Hugo 0.88.1">Hugo</a> 强力驱动 | 主题 - <a href="https://github.com/dillonzq/LoveIt" target="_blank" rel="noopener noreffer" title="LoveIt 0.2.10"><i class="far fa-kiss-wink-heart fa-fw"></i> LoveIt</a>
+                </div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2021</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank"></a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw"></i>
+            </a>
+        </div><script type="text/javascript" src="/lib/smooth-scroll/smooth-scroll.min.js"></script><script type="text/javascript" src="/lib/lazysizes/lazysizes.min.js"></script><script type="text/javascript" src="/lib/clipboard/clipboard.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":10},"comment":{}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

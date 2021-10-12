@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+        <title>MIT 6.830 Lab1 simpleDB - TYH | BLOG</title><meta name="Description" content=""><meta property="og:title" content="MIT 6.830 Lab1 simpleDB" />
+<meta property="og:description" content="Lab 1 SimpleDB Outlines  实现 Tuple, TupleDesc → 管理元祖 实现 Catalog → 管理表（表对应于文件） 实现 BufferPool → 先从缓冲池获取缓存页面，再从磁盘读取页面加载到缓冲池 实现 RecordId, HeapPageId, HeapPage → 采用堆文件组织方式，堆文件中的单个页面（堆页面） 实现 HeapFile → 堆文件，负责从磁盘读取页面 实现 SeqScan → 顺序扫描的运算符，主要是实现里面返回单个堆文件中所有元祖的迭代器  SimpleDB  表示 字段（Field）、元祖（Tuple）和元祖类型（TupleDesc） 的类 将 谓语和条件应用于元祖 的类 一种或多种访问方法，即将关系存储在磁盘上并且提供关系元祖的迭代方法 处理元祖的运算符集合（包括 select, join, insert, delete） 缓冲池（用于缓存活跃的元祖和页面，并且处理并发控制和事务） 目录  Exercise 1 Tuples in SimpleDB are quite basic. They consist of a collection of Field objects, one per field in the Tuple." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://tangyiheng2021.github.io/posts/mit_6.830_lab1/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-10-12T20:15:30+08:00" />
+<meta property="article:modified_time" content="2021-10-12T20:15:30+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="MIT 6.830 Lab1 simpleDB"/>
+<meta name="twitter:description" content="Lab 1 SimpleDB Outlines  实现 Tuple, TupleDesc → 管理元祖 实现 Catalog → 管理表（表对应于文件） 实现 BufferPool → 先从缓冲池获取缓存页面，再从磁盘读取页面加载到缓冲池 实现 RecordId, HeapPageId, HeapPage → 采用堆文件组织方式，堆文件中的单个页面（堆页面） 实现 HeapFile → 堆文件，负责从磁盘读取页面 实现 SeqScan → 顺序扫描的运算符，主要是实现里面返回单个堆文件中所有元祖的迭代器  SimpleDB  表示 字段（Field）、元祖（Tuple）和元祖类型（TupleDesc） 的类 将 谓语和条件应用于元祖 的类 一种或多种访问方法，即将关系存储在磁盘上并且提供关系元祖的迭代方法 处理元祖的运算符集合（包括 select, join, insert, delete） 缓冲池（用于缓存活跃的元祖和页面，并且处理并发控制和事务） 目录  Exercise 1 Tuples in SimpleDB are quite basic. They consist of a collection of Field objects, one per field in the Tuple."/>
+<meta name="application-name" content="TYH | BLOG">
+<meta name="apple-mobile-web-app-title" content="TYH | BLOG"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab1/" /><link rel="next" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab2/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="stylesheet" href="/lib/fontawesome-free/all.min.css"><link rel="stylesheet" href="/lib/animate/animate.min.css"><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "MIT 6.830 Lab1 simpleDB",
+        "inLanguage": "en",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/tangyiheng2021.github.io\/posts\/mit_6.830_lab1\/"
+        },"genre": "posts","keywords": "数据库","wordcount":  1580 ,
+        "url": "https:\/\/tangyiheng2021.github.io\/posts\/mit_6.830_lab1\/","datePublished": "2021-10-12T20:15:30+08:00","dateModified": "2021-10-12T20:15:30+08:00","publisher": {
+            "@type": "Organization",
+            "name": "tangyiheng"},"author": {
+                "@type": "Person",
+                "name": "tangyiheng"
+            },"description": ""
+    }
+    </script></head>
+    <body header-desktop="" header-mobile=""><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : '' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="TYH | BLOG">TYH | BLOG</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="TYH | BLOG">TYH | BLOG</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><a class="menu-item" href="/posts/" title="">文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animated flipInX">MIT 6.830 Lab1 simpleDB</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>tangyiheng</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/mit-6.830/"><i class="far fa-folder fa-fw"></i>MIT 6.830</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2021-10-12">2021-10-12</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;约 1580 字&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;预计阅读 8 分钟&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#outlines">Outlines</a></li>
+    <li><a href="#simpledb">SimpleDB</a></li>
+    <li><a href="#exercise-1">Exercise 1</a>
+      <ul>
+        <li><a href="#测试结果">测试结果</a></li>
+      </ul>
+    </li>
+    <li><a href="#exercise-2">Exercise 2</a>
+      <ul>
+        <li><a href="#测试结果-1">测试结果</a></li>
+      </ul>
+    </li>
+    <li><a href="#exercise-3">Exercise 3</a></li>
+    <li><a href="#exercise-4">Exercise 4</a>
+      <ul>
+        <li><a href="#测试结果-2">测试结果</a></li>
+      </ul>
+    </li>
+    <li><a href="#exercise-5">Exercise 5</a>
+      <ul>
+        <li><a href="#单元测试结果">单元测试结果</a></li>
+      </ul>
+    </li>
+    <li><a href="#exercise-6">Exercise 6</a>
+      <ul>
+        <li><a href="#系统测试结果">系统测试结果</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h1 id="lab-1-simpledb">Lab 1 SimpleDB</h1>
+<h2 id="outlines">Outlines</h2>
+<ol>
+<li>实现 <code>Tuple</code>, <code>TupleDesc</code> → 管理元祖</li>
+<li>实现 <code>Catalog</code> → 管理表（表对应于文件）</li>
+<li>实现 <code>BufferPool</code> → 先从缓冲池获取缓存页面，再从磁盘读取页面加载到缓冲池</li>
+<li>实现 <code>RecordId</code>,  <code>HeapPageId</code>, <code>HeapPage</code> → 采用堆文件组织方式，堆文件中的单个页面（堆页面）</li>
+<li>实现 <code>HeapFile</code> → 堆文件，负责从磁盘读取页面</li>
+<li>实现 <code>SeqScan</code> → 顺序扫描的运算符，主要是实现里面返回单个堆文件中所有元祖的迭代器</li>
+</ol>
+<h2 id="simpledb">SimpleDB</h2>
+<ul>
+<li>表示 字段（<code>Field</code>）、元祖（<code>Tuple</code>）和元祖类型（<code>TupleDesc</code>） 的类</li>
+<li>将 谓语和条件应用于元祖 的类</li>
+<li>一种或多种访问方法，即将关系存储在磁盘上并且提供关系元祖的迭代方法</li>
+<li>处理元祖的运算符集合（包括 <code>select</code>, <code>join</code>, <code>insert</code>, <code>delete</code>）</li>
+<li>缓冲池（用于缓存活跃的元祖和页面，并且处理并发控制和事务）</li>
+<li>目录</li>
+</ul>
+<h2 id="exercise-1">Exercise 1</h2>
+<p>Tuples in SimpleDB are quite basic. They consist of a collection of <code>Field</code> objects, one per field in the <code>Tuple</code>. <code>Field</code> is an interface that different data types (e.g., integer, string) implement. <code>Tuple</code> objects are created by the underlying access methods (e.g., heap files, or B-trees), as described in the next section. Tuples also have a type (or schema), called a <em><!-- raw HTML omitted -->tuple descriptor<!-- raw HTML omitted --></em>, represented by a <code>TupleDesc</code> object. This object consists of a collection of <code>Type</code> objects, one per field in the tuple, each of which describes the type of the corresponding field.</p>
+<ul>
+<li><code>Field</code>：字段，不同数据类型的接口</li>
+<li><code>Tuple</code>：元祖，即字段的集合</li>
+<li><code>TupleDesc</code>：元祖类型，即描述字段类型的集合</li>
+</ul>
+<p>需要实现以下类：</p>
+<ul>
+<li><code>src/java/simpledb/storage/TupleDesc.java</code></li>
+<li><code>src/java/simpledb/storage/Tuple.java</code></li>
+</ul>
+<h3 id="测试结果">测试结果</h3>
+<ul>
+<li>
+<p><code>TupleTest</code></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="o">(</span>base<span class="o">)</span> ➜  simple-db-hw-2021 git:<span class="o">(</span>master<span class="o">)</span> ✗ ant runtest -Dtest<span class="o">=</span>TupleTest
+Buildfile: /Users/tangyiheng/db-project/simple-db-hw-2021/build.xml
+
+compile:
+
+testcompile:
+
+runtest:
+    <span class="o">[</span>junit<span class="o">]</span> Running simpledb.TupleTest
+    <span class="o">[</span>junit<span class="o">]</span> Testsuite: simpledb.TupleTest
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 3, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.009 sec
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 3, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.009 sec
+    <span class="o">[</span>junit<span class="o">]</span> 
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getTupleDesc took 0.003 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: modifyRecordId took 0.001 sec
+    <span class="o">[</span>junit<span class="o">]</span>     Caused an ERROR
+    <span class="o">[</span>junit<span class="o">]</span> modifyRecordId<span class="o">()</span> <span class="nb">test</span> failed due to RecordId.equals<span class="o">()</span> not being implemented.  This is not required <span class="k">for</span> Lab 1, but should pass when you <span class="k">do</span> implement the RecordId class.
+    <span class="o">[</span>junit<span class="o">]</span> java.lang.UnsupportedOperationException: modifyRecordId<span class="o">()</span> <span class="nb">test</span> failed due to RecordId.equals<span class="o">()</span> not being implemented.  This is not required <span class="k">for</span> Lab 1, but should pass when you <span class="k">do</span> implement the RecordId class.
+    <span class="o">[</span>junit<span class="o">]</span>     at simpledb.TupleTest.modifyRecordId<span class="o">(</span>TupleTest.java:56<span class="o">)</span>
+    <span class="o">[</span>junit<span class="o">]</span>     at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0<span class="o">(</span>Native Method<span class="o">)</span>
+    <span class="o">[</span>junit<span class="o">]</span>     at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke<span class="o">(</span>NativeMethodAccessorImpl.java:77<span class="o">)</span>
+    <span class="o">[</span>junit<span class="o">]</span>     at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke<span class="o">(</span>DelegatingMethodAccessorImpl.java:43<span class="o">)</span>
+    <span class="o">[</span>junit<span class="o">]</span> 
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: modifyFields took <span class="m">0</span> sec
+
+BUILD FAILED
+/Users/tangyiheng/db-project/simple-db-hw-2021/build.xml:253: The following error occurred <span class="k">while</span> executing this line:
+/Users/tangyiheng/db-project/simple-db-hw-2021/build.xml:63: Test simpledb.TupleTest failed
+
+Total time: <span class="m">0</span> seconds
+
+</code></pre></div></li>
+<li>
+<p><code>TupleDescTest</code></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="o">(</span>base<span class="o">)</span> ➜  simple-db-hw-2021 git:<span class="o">(</span>master<span class="o">)</span> ✗ ant runtest -Dtest<span class="o">=</span>TupleDescTest
+Buildfile: /Users/tangyiheng/db-project/simple-db-hw-2021/build.xml
+
+compile:
+
+testcompile:
+
+runtest:
+    <span class="o">[</span>junit<span class="o">]</span> Running simpledb.TupleDescTest
+    <span class="o">[</span>junit<span class="o">]</span> Testsuite: simpledb.TupleDescTest
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 sec
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 sec
+    <span class="o">[</span>junit<span class="o">]</span> 
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getSize took 0.004 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getType took <span class="m">0</span> sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: numFields took <span class="m">0</span> sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: combine took 0.005 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: testEquals took <span class="m">0</span> sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: nameToId took 0.008 sec
+
+BUILD SUCCESSFUL
+Total time: <span class="m">0</span> seconds
+</code></pre></div></li>
+</ul>
+<h2 id="exercise-2">Exercise 2</h2>
+<p>The catalog (class <code>Catalog</code> in SimpleDB) consists of <!-- raw HTML omitted -->a list of the tables and schemas of the tables<!-- raw HTML omitted --> that are currently in the database. You will need to support the ability to <!-- raw HTML omitted -->add a new table<!-- raw HTML omitted -->, as well as <!-- raw HTML omitted -->getting information about a particular table<!-- raw HTML omitted -->. Associated with each table is a <code>TupleDesc</code> object that allows operators to determine the types and number of fields in a table.</p>
+<p>The global catalog is a single instance of <code>Catalog</code> that is allocated for the entire SimpleDB process. The global catalog can be retrieved via the method <code>Database.getCatalog()</code>, and the same goes for the global buffer pool ( using <code>Database.getBufferPool()</code>).</p>
+<ul>
+<li><code>Catalog</code>：<strong>目录</strong>，包含了表和表类型的列表
+<ul>
+<li>需要添加功能：1.添加一个新表；2.获取特定表的信息；</li>
+</ul>
+</li>
+<li><code>Database.getCatalog()</code>获取<strong>全局目录</strong></li>
+</ul>
+<p>需要实现以下类：</p>
+<ul>
+<li><code>src/java/simpledb/common/Catalog.java</code></li>
+</ul>
+<h3 id="测试结果-1">测试结果</h3>
+<ul>
+<li><code>CatalogTest</code></li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="o">(</span>base<span class="o">)</span> ➜  simple-db-hw-2021 git:<span class="o">(</span>master<span class="o">)</span> ✗ ant runtest -Dtest<span class="o">=</span>CatalogTest
+Buildfile: /Users/tangyiheng/db-project/simple-db-hw-2021/build.xml
+
+compile:
+
+testcompile:
+
+runtest:
+    <span class="o">[</span>junit<span class="o">]</span> Running simpledb.CatalogTest
+    <span class="o">[</span>junit<span class="o">]</span> Testsuite: simpledb.CatalogTest
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 sec
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 sec
+    <span class="o">[</span>junit<span class="o">]</span> 
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getTupleDesc took 0.002 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getTableId took 0.001 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: handleDuplicateIds took <span class="m">0</span> sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getDatabaseFile took 0.001 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: handleDuplicateNames took <span class="m">0</span> sec
+
+BUILD SUCCESSFUL
+Total time: <span class="m">0</span> seconds
+</code></pre></div><h2 id="exercise-3">Exercise 3</h2>
+<p>The buffer pool (class <code>BufferPool</code> in SimpleDB) is responsible for caching pages in memory that have been recently read from disk. All operators read and write pages from various files on disk through the buffer pool. It consists of a fixed number of pages, defined by the <code>numPages</code> parameter to the <code>BufferPool</code> constructor. <!-- raw HTML omitted -->In later labs, you will implement an eviction policy<!-- raw HTML omitted -->. For this lab, you only need to implement the constructor and the <code>BufferPool.getPage()</code> method used by the SeqScan operator. The BufferPool should store up to <code>numPages</code> pages. <!-- raw HTML omitted -->For this lab, if more than <code>numPages</code> requests are made for different pages, then instead of implementing an eviction policy, you may throw a DbException.<!-- raw HTML omitted --> In future labs you will be required to implement an eviction policy.</p>
+<p>The <code>Database</code> class provides a static method, <code>Database.getBufferPool()</code>, that returns a reference to the single BufferPool instance for the entire SimpleDB process.</p>
+<ul>
+<li><code>BufferPool</code>：在内存缓存最近读取的页面
+<ul>
+<li><code>numPages</code></li>
+<li>eviction policy：驱逐策略</li>
+</ul>
+</li>
+<li><code>Database.getBufferPool()</code>：返回全局的缓冲池</li>
+</ul>
+<p>需要实现以下类：</p>
+<ul>
+<li><code>src/java/simpledb/storage/BufferPool.java</code></li>
+</ul>
+<h2 id="exercise-4">Exercise 4</h2>
+<p>Access methods provide a way to read or write data from disk that is arranged in a specific way. Common access methods include <!-- raw HTML omitted -->heap files (unsorted files of tuples) and B-trees<!-- raw HTML omitted -->; for this assignment, you will only implement a heap file access method, and we have written some of the code for you.</p>
+<p><code>DbFile</code> 的两种实现：</p>
+<ul>
+<li><code>HeapFile</code>：无序</li>
+<li><code>BTreeFile</code>：有序</li>
+</ul>
+<p><strong>A HeapFile object is arranged into a set of pages, each of which consists of a fixed number of bytes for storing tuples</strong>, (defined by the constant <code>BufferPool.DEFAULT_PAGE_SIZE</code>), including a header. In SimpleDB, there is one HeapFile object for each table in the database. Each page in a HeapFile is arranged as a set of slots, each of which can hold one tuple (tuples for a given table in SimpleDB are all of the same size). In addition to these slots, each page has a header that consists of a bitmap with one bit per tuple slot. If the bit corresponding to a particular tuple is 1, it indicates that the tuple is valid; if it is 0, the tuple is invalid (e.g., has been deleted or was never initialized.) Pages of HeapFile objects are of type HeapPage which implements the Page interface. Pages are stored in the buffer pool but are read and written by the HeapFile class.</p>
+<p><code>HeapFile</code> ：堆文件，为一组页面的集合，每个页面由固定数量的字节组成，用于存储元祖。</p>
+<ul>
+<li>每个表 <code>Table</code> 对应一个堆文件 <code>HeapFile</code>
+<ul>
+<li>堆文件中的每个页面被组织为一系列的槽（<code>slot</code>），每个槽容纳一个元祖 <code>Tuple</code></li>
+<li>除了这些槽外，每个页面的头部有一个位图 <code>bitmap</code>，用来表示各个槽中存储的元祖是否有效
+<ul>
+<li>0 表示元祖无效，如已被删除或者未被初始化</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>每个页面可容纳的元祖数量：</p>
+<p><code>_tuples per page_ = floor((_page size_ * 8) / (_tuple size_ * 8 + 1))</code></p>
+<p>存储标题所需要的字节数：</p>
+<p><code>headerBytes = ceiling(tupsPerPage/8)</code></p>
+<ul>
+<li><code>HeapPage</code>: 存储 <code>HeapFile</code> 的单个页面, 实现 <code>Page</code> 接口</li>
+<li><code>HeapFile</code>: 存储一系列 <code>Tuple</code>, 同时 <code>Tuple</code> 又存储在 <code>HeapPage</code> 中，表现为 <code>HeapPage</code> 的集合。</li>
+</ul>
+<p>需要实现的类：</p>
+<ul>
+<li><code>src/java/simpledb/storage/HeapPageId.java</code></li>
+<li><code>src/java/simpledb/storage/RecordId.java</code></li>
+<li><code>src/java/simpledb/storage/HeapPage.java</code></li>
+</ul>
+<h3 id="测试结果-2">测试结果</h3>
+<ul>
+<li>
+<p><code>HeapPageIdTest</code></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">runtest:
+    <span class="o">[</span>junit<span class="o">]</span> Running simpledb.HeapPageIdTest
+    <span class="o">[</span>junit<span class="o">]</span> Testsuite: simpledb.HeapPageIdTest
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 sec
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 sec
+    <span class="o">[</span>junit<span class="o">]</span> 
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: equals took 0.002 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: pageno took <span class="m">0</span> sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getTableId took <span class="m">0</span> sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: testHashCode took 0.003 sec
+
+BUILD SUCCESSFUL
+Total time: <span class="m">1</span> second
+</code></pre></div></li>
+<li>
+<p><code>HeapPageReadTest</code></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">runtest:
+    <span class="o">[</span>junit<span class="o">]</span> Running simpledb.HeapPageReadTest
+    <span class="o">[</span>junit<span class="o">]</span> Testsuite: simpledb.HeapPageReadTest
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 sec
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 sec
+    <span class="o">[</span>junit<span class="o">]</span> 
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getSlot took 0.005 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getId took <span class="m">0</span> sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getNumEmptySlots took <span class="m">0</span> sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: testIterator took 0.001 sec
+
+BUILD SUCCESSFUL
+Total time: <span class="m">0</span> seconds
+</code></pre></div></li>
+<li>
+<p><code>RecordIdTest</code></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">runtest:
+    <span class="o">[</span>junit<span class="o">]</span> Running simpledb.RecordIdTest
+    <span class="o">[</span>junit<span class="o">]</span> Testsuite: simpledb.RecordIdTest
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 sec
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 sec
+    <span class="o">[</span>junit<span class="o">]</span> 
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: equals took 0.004 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: tupleno took <span class="m">0</span> sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: hCode took 0.005 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getPageId took <span class="m">0</span> sec
+
+BUILD SUCCESSFUL
+Total time: <span class="m">0</span> seconds
+</code></pre></div></li>
+</ul>
+<h2 id="exercise-5">Exercise 5</h2>
+<blockquote>
+<p>To read a page from disk, you will first need to <strong>calculate the correct offset in the file</strong>. Hint: you will need random access to the file in order to read and write pages at arbitrary offsets. You should not call BufferPool methods when reading a page from disk.</p>
+<p>You will also need to implement the <code>HeapFile.iterator()</code> method, which should <strong>iterate through through the tuples of each page in the HeapFile</strong>. The iterator must use the <code>BufferPool.getPage()</code> method to access pages in the <code>HeapFile</code>. This method loads the page into the buffer pool and will eventually be used (in a later lab) to implement locking-based concurrency control and recovery. <strong>Do not load the entire table into memory on the <code>open()</code> call</strong> &ndash; this will cause an out of memory error for very large tables.</p>
+<p>At this point, your code should pass the unit tests in <code>HeapFileReadTest</code>.</p>
+</blockquote>
+<ul>
+<li>计算文件中的正确偏移 <code>offset</code>，以从磁盘中读取文件（其实上都是通过缓冲池来读取）</li>
+<li><code>HeapFile.iterator()</code>：返回文件中所有元祖的迭代器，且迭代器必须使用 <code>BufferPool.getPage()</code>方法来获取 <code>HeapFile</code> 中的页面
+<ul>
+<li>该方法将页面加载到缓冲池，以实现基于锁的并发控制以及恢复</li>
+</ul>
+</li>
+<li>切忌使用 <code>open()</code>系统调用 将整张表加载到内存</li>
+</ul>
+<p>需要实现的类：</p>
+<ul>
+<li><code>src/java/simpledb/storage/HeapFile.java</code></li>
+<li>主要是实现 <code>readPage()</code> 方法和 <code>iterator()</code> 方法
+<ul>
+<li>一个是从磁盘文件读取文件内容</li>
+</ul>
+</li>
+</ul>
+<h3 id="单元测试结果">单元测试结果</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">runtest:
+    <span class="o">[</span>junit<span class="o">]</span> Running simpledb.HeapPageReadTest
+    <span class="o">[</span>junit<span class="o">]</span> Testsuite: simpledb.HeapPageReadTest
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 sec
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 sec
+    <span class="o">[</span>junit<span class="o">]</span> 
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getSlot took 0.007 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getId took <span class="m">0</span> sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: getNumEmptySlots took <span class="m">0</span> sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: testIterator took 0.001 sec
+
+BUILD SUCCESSFUL
+Total time: <span class="m">0</span> seconds
+</code></pre></div><h2 id="exercise-6">Exercise 6</h2>
+<blockquote>
+<p>This operator sequentially scans all of the tuples from the pages of the table specified by the <code>tableid</code> in the constructor. This operator should access tuples through the <code>DbFile.iterator()</code> method.</p>
+<p>At this point, you should be able to complete the <code>ScanTest</code> system test. Good work!</p>
+</blockquote>
+<p>通过指定的 <code>tableid</code> 顺序扫描指定表格所有表格中的所有元祖。</p>
+<p>内部调用 <code>Dbfile.iterator()</code> 接口返回元祖迭代器。</p>
+<p>需要实现的类：</p>
+<ul>
+<li><code>src/java/simpledb/execution/SeqScan.java</code></li>
+</ul>
+<h3 id="系统测试结果">系统测试结果</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">runsystest:
+    <span class="o">[</span>junit<span class="o">]</span> Running simpledb.systemtest.ScanTest
+    <span class="o">[</span>junit<span class="o">]</span> Testsuite: simpledb.systemtest.ScanTest
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.235 sec
+    <span class="o">[</span>junit<span class="o">]</span> Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.235 sec
+    <span class="o">[</span>junit<span class="o">]</span> 
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: testTupleDesc took 0.027 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: testCache took 0.13 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: testSmall took 0.071 sec
+    <span class="o">[</span>junit<span class="o">]</span> Testcase: testRewind took 0.001 sec
+
+BUILD SUCCESSFUL
+Total time: <span class="m">0</span> seconds
+</code></pre></div></div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2021-10-12</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"></div>
+            <div class="post-info-share">
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav">
+            <a href="/posts/mit_6.830_lab2/" class="next" rel="next" title="MIT 6.830 Lab2 simpleDB Operators">MIT 6.830 Lab2 simpleDB Operators<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+</article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">由 <a href="https://gohugo.io/" target="_blank" rel="noopener noreffer" title="Hugo 0.88.1">Hugo</a> 强力驱动 | 主题 - <a href="https://github.com/dillonzq/LoveIt" target="_blank" rel="noopener noreffer" title="LoveIt 0.2.10"><i class="far fa-kiss-wink-heart fa-fw"></i> LoveIt</a>
+                </div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2021</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank"></a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw"></i>
+            </a>
+        </div><script type="text/javascript" src="/lib/smooth-scroll/smooth-scroll.min.js"></script><script type="text/javascript" src="/lib/lazysizes/lazysizes.min.js"></script><script type="text/javascript" src="/lib/clipboard/clipboard.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":10},"comment":{}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

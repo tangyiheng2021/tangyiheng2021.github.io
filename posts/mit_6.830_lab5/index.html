@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+        <title>MIT 6.830 Lab5 B&#43;Tree Index - TYH | BLOG</title><meta name="Description" content=""><meta property="og:title" content="MIT 6.830 Lab5 B&#43;Tree Index" />
+<meta property="og:description" content="Lab5 B&#43;Tree Index Outline | 大纲  In this lab you will implement a B&#43; tree index for efficient lookups and range scans. We supply you with all of the low-level code you will need to implement the tree structure. You will implement searching, splitting pages, redistributing tuples between pages, and merging pages.
+ 实现一个基于B&#43;树的索引结构, 以支持高效的查找和范围扫描.
+具体实现搜索、页面拆分、在页面之间重新分配元祖、合并页面这些操作.
+ As described by the textbook and discussed in class, the internal nodes in B&#43; trees contain multiple entries, each consisting of a key value and a left and a right child pointer." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://tangyiheng2021.github.io/posts/mit_6.830_lab5/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-10-12T20:35:55+08:00" />
+<meta property="article:modified_time" content="2021-10-12T20:35:55+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="MIT 6.830 Lab5 B&#43;Tree Index"/>
+<meta name="twitter:description" content="Lab5 B&#43;Tree Index Outline | 大纲  In this lab you will implement a B&#43; tree index for efficient lookups and range scans. We supply you with all of the low-level code you will need to implement the tree structure. You will implement searching, splitting pages, redistributing tuples between pages, and merging pages.
+ 实现一个基于B&#43;树的索引结构, 以支持高效的查找和范围扫描.
+具体实现搜索、页面拆分、在页面之间重新分配元祖、合并页面这些操作.
+ As described by the textbook and discussed in class, the internal nodes in B&#43; trees contain multiple entries, each consisting of a key value and a left and a right child pointer."/>
+<meta name="application-name" content="TYH | BLOG">
+<meta name="apple-mobile-web-app-title" content="TYH | BLOG"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab5/" /><link rel="prev" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab4/" /><link rel="next" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab6/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="stylesheet" href="/lib/fontawesome-free/all.min.css"><link rel="stylesheet" href="/lib/animate/animate.min.css"><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "MIT 6.830 Lab5 B+Tree Index",
+        "inLanguage": "en",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/tangyiheng2021.github.io\/posts\/mit_6.830_lab5\/"
+        },"genre": "posts","keywords": "数据库","wordcount":  4341 ,
+        "url": "https:\/\/tangyiheng2021.github.io\/posts\/mit_6.830_lab5\/","datePublished": "2021-10-12T20:35:55+08:00","dateModified": "2021-10-12T20:35:55+08:00","publisher": {
+            "@type": "Organization",
+            "name": "tangyiheng"},"author": {
+                "@type": "Person",
+                "name": "tangyiheng"
+            },"description": ""
+    }
+    </script></head>
+    <body header-desktop="" header-mobile=""><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : '' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="TYH | BLOG">TYH | BLOG</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="TYH | BLOG">TYH | BLOG</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><a class="menu-item" href="/posts/" title="">文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animated flipInX">MIT 6.830 Lab5 B&#43;Tree Index</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>tangyiheng</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/mit-6.830/"><i class="far fa-folder fa-fw"></i>MIT 6.830</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2021-10-12">2021-10-12</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;约 4341 字&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;预计阅读 21 分钟&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#outline--大纲">Outline | 大纲</a></li>
+    <li><a href="#search--查找">Search | 查找</a>
+      <ul>
+        <li><a href="#exercise-1-btreefilefindleafpage--查找叶子节点">Exercise 1: BTreeFile.findLeafPage() | 查找叶子节点</a></li>
+      </ul>
+    </li>
+    <li><a href="#insert--插入">Insert | 插入</a>
+      <ul>
+        <li><a href="#exercise-2-splitting-pages--拆分页面">Exercise 2: Splitting Pages | 拆分页面</a></li>
+      </ul>
+    </li>
+    <li><a href="#delete--删除">Delete | 删除</a>
+      <ul>
+        <li></li>
+        <li><a href="#exercise-4-merging-pages--合并页面">Exercise 4: Merging pages | 合并页面</a></li>
+      </ul>
+    </li>
+    <li><a href="#transactions--支持事务">Transactions | 支持事务</a>
+      <ul>
+        <li><a href="#bonus-exercise-5-btreereversescan--反向迭代器">Bonus Exercise 5: BTreeReverseScan | 反向迭代器</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h1 id="lab5-btree-index">Lab5 B+Tree Index</h1>
+<h2 id="outline--大纲">Outline | 大纲</h2>
+<blockquote>
+<p>In this lab you will implement a B+ tree index for efficient lookups and range scans. We supply you with all of the low-level code you will need to implement the tree structure. You will implement searching, splitting pages, redistributing tuples between pages, and merging pages.</p>
+</blockquote>
+<p>实现一个基于B+树的索引结构, 以支持高效的查找和范围扫描.</p>
+<p>具体实现<!-- raw HTML omitted -->搜索、页面拆分、在页面之间重新分配元祖、合并页面<!-- raw HTML omitted -->这些操作.</p>
+<blockquote>
+<p>As described by the textbook and discussed in class, the internal nodes in B+ trees contain multiple entries, each consisting of a key value and a left and a right child pointer. Adjacent keys share a child pointer, so internal nodes containing <em>m</em> keys have <em>m</em>+1 child pointers. Leaf nodes can either contain data entries or pointers to data entries in other database files. For simplicity, we will implement a B+tree in which the leaf pages actually contain the data entries. Adjacent leaf pages are linked together with right and left sibling pointers, so range scans only require one initial search through the root and internal nodes to find the first leaf page. Subsequent leaf pages are found by following right (or left) sibling pointers.</p>
+</blockquote>
+<p>B+树的内部节点包含了多个条目, <strong>每个条目包含了一个key值和一个左右子指针(指向孩子节点). 相邻key共享一个子指针,</strong>  所以内部节点一共包含了m个key值和m+1个子指针.叶子结点可以包括数据条目, 也可以包含指向磁盘文件上数据条目的指针.</p>
+<p>为了简单, 实现一个B+树, 其<strong>叶子结点包含了实际的数据条目</strong>. 相邻叶子节点和左右兄弟节点通过指针连接起来, 所以<strong>范围扫描</strong>仅需要通过根节点和内部节点进行一次搜索即可找到第一个叶子节点, 之后的叶子节点可以通过随后的<strong>兄弟节点之间的指针</strong>来遍历.</p>
+<h2 id="search--查找">Search | 查找</h2>
+<blockquote>
+<p>Take a look at <code>index/</code> and <code>BTreeFile.java</code>. This is the core file for the implementation of the B+Tree and where you will write all your code for this lab. Unlike the HeapFile, the BTreeFile consists of four different kinds of pages. As you would expect, there are two different kinds of pages for the nodes of the tree: internal pages and leaf pages. Internal pages are implemented in <code>BTreeInternalPage.java</code>, and leaf pages are implemented in<code>BTreeLeafPage.java</code>. For convenience, we have created an abstract class in <code>BTreePage.java</code> which contains code that is common to both leaf and internal pages. In addition, header pages are implemented in <code>BTreeHeaderPage.java</code> and keep track of which pages in the file are in use. Lastly, there is one page at the beginning of every BTreeFile which points to the root page of the tree and the first header page. This singleton page is implemented in <code>BTreeRootPtrPage.java</code>. Familiarize yourself with the interfaces of these classes, especially <code>BTreePage</code>, <code>BTreeInternalPage</code> and <code>BTreeLeafPage</code>. You will need to use these classes in your implementation of the B+Tree.</p>
+</blockquote>
+<p><code>index/</code>目录和<code>BTreeFile</code>是实现B+树的核心文件. 与<code>HeapFile</code>不同, <code>BTreeFile</code>由四种不同的<code>Page</code>组成, <strong>树的节点包含两种不同的页面: 内部节点页面和叶子节点页面</strong>. 在<code>BTreeinternalPage</code>类中实现内部节点, 在<code>BTreeLeafPage</code>类中实现叶子节点. 方便起见, 设计了一个<code>BTreePage</code>抽象类用于抽象内部节点和叶子节点的共有特征. 此外, 在<code>BTreeHeaderPage</code>类中实现<strong>头部页面, 用于记录文件中那些页面正在使用中</strong>. 最后, 在每个<code>BTreeFile</code>的开头都有一个页面, 用于指向B+树的根节点锁在页面和第一个头部页面. 这个页面在<code>BTreeRootPtrPage</code>类中实现.</p>
+<ul>
+<li><code>BTreePage</code></li>
+<li><code>BTreeInternalPage</code></li>
+<li><code>BTreeLeafPage</code></li>
+</ul>
+<blockquote>
+<p>Your first job is to implement the <code>findLeafPage()</code> function in <code>BTreeFile.java</code>. This function is used to find the appropriate leaf page given a particular key value, and is used for both searches and inserts. For example, suppose we have a B+Tree with two leaf pages (See Figure 1). The root node is an internal page with one entry containing one key (6, in this case) and two child pointers. Given a value of 1, this function should return the first leaf page. Likewise, given a value of 8, this function should return the second page. The less obvious case is if we are given a key value of 6. There may be duplicate keys, so there could be 6&rsquo;s on both leaf pages. In this case, the function should return the first (left) leaf page.'</p>
+</blockquote>
+<p>首先完成<code>BTreeFile.java</code>中的<code>findLeafPage()</code>函数: 该函数用于查找给定键值所在的叶子节点, 并用于之后的搜索和查找.</p>
+<p>对于<strong>重复键值</strong>的情况, 应该<!-- raw HTML omitted -->返回第一个叶子节点页面<!-- raw HTML omitted -->.</p>
+<p><a href="https://github.com/MIT-DB-Class/simple-db-hw-2021/blob/master/simple_tree.png" target="_blank" rel="noopener noreffer"><!-- raw HTML omitted --></a></p>
+<blockquote>
+<p>Your <code>findLeafPage()</code> function should recursively search through internal nodes until it reaches the leaf page corresponding to the provided key value. In order to find the appropriate child page at each step, you should iterate through the entries in the internal page and compare the entry value to the provided key value. <code>BTreeInternalPage.iterator()</code> provides access to the entries in the internal page using the interface defined in <code>BTreeEntry.java</code>. This iterator allows you to iterate through the key values in the internal page and access the left and right child page ids for each key. The base case of your recursion happens when the passed-in BTreePageId has <code>pgcateg()</code> equal to <code>BTreePageId.LEAF</code>, indicating that it is a leaf page. In this case, you should just fetch the page from the buffer pool and return it. You do not need to confirm that it actually contains the provided key value f.</p>
+</blockquote>
+<p><code>findLeafPage()</code>函数应该递归的搜索内部节点, 直到它到达给定键值所在的叶子页面. 为了在迭代的每一步找到正确的孩子页面, 应该遍历内部页面的每个条目, 比较条目值和给定键值.</p>
+<p><code>BTreeInternalPage.iterator()</code> 使用<code>BTreeEntry.java</code>中定义的接口来提供对内部页面条目的访问. 该迭代器可以遍历内部页面中的键值, 并访问每个键的左右孩子页面的ID. 当传入的<code>BTreePageId</code>的<code>BTreePageId.LEAF</code>等于<code>pgcateg()</code> , 则递归发生, 表明它是一个<!-- raw HTML omitted -->叶子节点. 这种情况, 只需从缓冲池中拿也获取页面并返回即可. 不需要确认是否实际包含提供的键值 f.<!-- raw HTML omitted --></p>
+<blockquote>
+<p>Your <code>findLeafPage()</code> code must also handle the case when the provided key value f is null. If the provided value is null, recurse on the left-most child every time in order to find the left-most leaf page. Finding the left-most leaf page is useful for scanning the entire file. Once the correct leaf page is found, you should return it. As mentioned above, you can check the type of page using the <code>pgcateg()</code> function in <code>BTreePageId.java</code>. You can assume that only leaf and internal pages will be passed to this function.</p>
+</blockquote>
+<p><code>findLeafPage()</code>必须能够<!-- raw HTML omitted -->处理提供的键值为空的情况. 如果提供键值为空, 就每次都在最左边的子页面上递归<!-- raw HTML omitted -->, 已找到最左边的叶子页面. 找到最左边的叶子节点将有助于扫描整个文件, 一旦找到正确的叶子页, 则返回. 可以使用<code>BTreePageId.java</code>中的<code>pgcateg()</code>检查页面类型. 假设只有叶子和内部页面将传递给该函数.</p>
+<blockquote>
+<p>Instead of directly calling <code>BufferPool.getPage()</code> to get each internal page and leaf page, we recommend calling the wrapper function we have provided, <code>BTreeFile.getPage()</code>. It works exactly like <code>BufferPool.getPage()</code>, but takes an extra argument to track the list of dirty pages. This function will be important for the next two exercises in which you will actually update the data and therefore need to keep track of dirty pages.</p>
+</blockquote>
+<p>与其直接使用 <code>BufferPool.getPage()</code> 来获取内部和叶子页面, 不妨调用提供好的包装函数: <code>BTreeFile.getPage()</code>, 不同点是其<!-- raw HTML omitted -->多了一个额外的参数用于追踪脏页列表<!-- raw HTML omitted -->.该函数非常重要, 用于实际更新数据因此需要记录脏页面.</p>
+<blockquote>
+<p>Every internal (non-leaf) page your <code>findLeafPage()</code> implementation visits should be fetched with READ_ONLY permission, except the returned leaf page, which should be fetched with the permission provided as an argument to the function. These permission levels will not matter for this lab, but they will be important for the code to function correctly in future labs.</p>
+</blockquote>
+<p><!-- raw HTML omitted -->访问内部页面需要READ_ONLY权限获取<!-- raw HTML omitted -->, 但返回的叶子页面除外, 该页面应该使用作为函数参数提供的权限进行获取.</p>
+<hr>
+<h3 id="exercise-1-btreefilefindleafpage--查找叶子节点">Exercise 1: BTreeFile.findLeafPage() | 查找叶子节点</h3>
+<blockquote>
+<p>Implement <code>BTreeFile.findLeafPage()</code>.</p>
+<p>After completing this exercise, you should be able to pass all the unit tests in <code>BTreeFileReadTest.java</code> and the system tests in <code>BTreeScanTest.java</code>.</p>
+</blockquote>
+<p><!-- raw HTML omitted --></p>
+<p>代码:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java">	<span class="cm">/**
+</span><span class="cm">	 * Recursive function which finds and locks the leaf page in the B+ tree corresponding to
+</span><span class="cm">	 * the left-most page possibly containing the key field f. It locks all internal
+</span><span class="cm">	 * nodes along the path to the leaf node with READ_ONLY permission, and locks the 
+</span><span class="cm">	 * leaf node with permission perm.
+</span><span class="cm">	 * 递归的寻找B+树的叶子页面 尽可能访问包含键值的最左边的页面（用于处理重复键值的情况）
+</span><span class="cm">	 * 对遍历路径上所有内部节点上读锁，对叶子节点上指定perm的锁
+</span><span class="cm">	 * 
+</span><span class="cm">	 * If f is null, it finds the left-most leaf page -- used for the iterator
+</span><span class="cm">	 * 若f为空，将找到最左边的叶子页面
+</span><span class="cm">	 * 
+</span><span class="cm">	 * @param tid - the transaction id
+</span><span class="cm">	 * @param dirtypages - the list of dirty pages which should be updated with all new dirty pages
+</span><span class="cm">	 * @param pid - the current page being searched	当前搜索的页面
+</span><span class="cm">	 * @param perm - the permissions with which to lock the leaf page
+</span><span class="cm">	 * @param f - the field to search for
+</span><span class="cm">	 * @return the left-most leaf page possibly containing the key field f
+</span><span class="cm">	 * 
+</span><span class="cm">	 */</span>
+	<span class="kd">private</span> <span class="n">BTreeLeafPage</span> <span class="nf">findLeafPage</span><span class="o">(</span><span class="n">TransactionId</span> <span class="n">tid</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">PageId</span><span class="o">,</span> <span class="n">Page</span><span class="o">&gt;</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">BTreePageId</span> <span class="n">pid</span><span class="o">,</span> <span class="n">Permissions</span> <span class="n">perm</span><span class="o">,</span>
+                                       <span class="n">Field</span> <span class="n">f</span><span class="o">)</span>
+					<span class="kd">throws</span> <span class="n">DbException</span><span class="o">,</span> <span class="n">TransactionAbortedException</span> <span class="o">{</span>
+		<span class="c1">// some code goes here
+</span><span class="c1"></span>		<span class="c1">// 判断当前节点类型 如果为叶子节点直接返回
+</span><span class="c1"></span>		<span class="k">if</span> <span class="o">(</span><span class="n">pid</span><span class="o">.</span><span class="na">pgcateg</span><span class="o">()</span> <span class="o">==</span> <span class="n">BTreePageId</span><span class="o">.</span><span class="na">LEAF</span><span class="o">)</span> <span class="o">{</span>
+			<span class="k">return</span> <span class="o">(</span><span class="n">BTreeLeafPage</span><span class="o">)</span> <span class="n">getPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">pid</span><span class="o">,</span> <span class="n">perm</span><span class="o">);</span>
+		<span class="o">}</span>
+		<span class="c1">// 如果当前节点为内部节点 在遍历当前节点的每个条目 找到合适的孩子节点指针
+</span><span class="c1"></span>		<span class="n">BTreeInternalPage</span> <span class="n">internalPage</span> <span class="o">=</span> <span class="o">(</span><span class="n">BTreeInternalPage</span><span class="o">)</span> <span class="n">getPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">pid</span><span class="o">,</span> <span class="n">Permissions</span><span class="o">.</span><span class="na">READ_ONLY</span><span class="o">);</span>
+		<span class="n">Iterator</span><span class="o">&lt;</span><span class="n">BTreeEntry</span><span class="o">&gt;</span> <span class="n">entryIterator</span> <span class="o">=</span> <span class="n">internalPage</span><span class="o">.</span><span class="na">iterator</span><span class="o">();</span>
+		<span class="c1">// 定义内部节点中用于比较的条目，以及将要走的孩子节点
+</span><span class="c1"></span>		<span class="n">BTreeEntry</span> <span class="n">entry</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+		<span class="c1">// 若 f 为空，则直接走最左边的孩子指针
+</span><span class="c1"></span>		<span class="k">if</span> <span class="o">(</span><span class="n">f</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+			<span class="k">if</span> <span class="o">(</span><span class="n">entryIterator</span><span class="o">.</span><span class="na">hasNext</span><span class="o">())</span> <span class="o">{</span>	<span class="c1">// 获取内部节点内的第一个条目(左子指针,键值,右子指针)
+</span><span class="c1"></span>				<span class="n">entry</span> <span class="o">=</span> <span class="n">entryIterator</span><span class="o">.</span><span class="na">next</span><span class="o">();</span>
+				<span class="k">return</span> <span class="n">findLeafPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">entry</span><span class="o">.</span><span class="na">getLeftChild</span><span class="o">(),</span> <span class="n">perm</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+			<span class="o">}</span>
+			<span class="c1">// 若内部节点为空?
+</span><span class="c1"></span>		<span class="o">}</span>
+
+		<span class="c1">// 若 f 不为空，则遍历 依次比较条目中的键值和提供的键值
+</span><span class="c1"></span>		<span class="c1">// 找到第一个 f &lt;= entry.field 的 entry, 通过它的左子节点递归
+</span><span class="c1"></span>		<span class="k">while</span> <span class="o">(</span><span class="n">entryIterator</span><span class="o">.</span><span class="na">hasNext</span><span class="o">())</span> <span class="o">{</span>
+			<span class="n">entry</span> <span class="o">=</span> <span class="n">entryIterator</span><span class="o">.</span><span class="na">next</span><span class="o">();</span>
+			<span class="n">Field</span> <span class="n">key</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="na">getKey</span><span class="o">();</span>
+			<span class="kt">boolean</span> <span class="n">find</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+			<span class="k">if</span> <span class="o">(</span><span class="n">key</span><span class="o">.</span><span class="na">getType</span><span class="o">()</span> <span class="o">==</span> <span class="n">Type</span><span class="o">.</span><span class="na">INT_TYPE</span><span class="o">)</span> <span class="o">{</span> <span class="c1">// int
+</span><span class="c1"></span>				<span class="kt">int</span> <span class="n">value</span> <span class="o">=</span> <span class="o">((</span><span class="n">IntField</span><span class="o">)</span> <span class="n">key</span><span class="o">).</span><span class="na">getValue</span><span class="o">();</span>
+				<span class="n">find</span> <span class="o">=</span> <span class="o">(</span> <span class="o">((</span><span class="n">IntField</span><span class="o">)</span> <span class="n">f</span><span class="o">).</span><span class="na">getValue</span><span class="o">()</span> <span class="o">&lt;=</span> <span class="n">value</span><span class="o">);</span>
+			<span class="o">}</span> <span class="k">else</span> <span class="o">{</span> <span class="c1">// string
+</span><span class="c1"></span>				<span class="n">String</span> <span class="n">value</span> <span class="o">=</span> <span class="o">((</span><span class="n">StringField</span><span class="o">)</span> <span class="n">key</span><span class="o">).</span><span class="na">getValue</span><span class="o">();</span>
+				<span class="n">find</span> <span class="o">=</span> <span class="o">(</span> <span class="o">((</span><span class="n">StringField</span><span class="o">)</span> <span class="n">f</span><span class="o">).</span><span class="na">getValue</span><span class="o">().</span><span class="na">compareTo</span><span class="o">(</span><span class="n">value</span><span class="o">)</span> <span class="o">&lt;=</span> <span class="n">0</span><span class="o">);</span>
+			<span class="o">}</span>
+			<span class="c1">//
+</span><span class="c1"></span>			<span class="k">if</span> <span class="o">(</span><span class="n">find</span><span class="o">)</span> <span class="o">{</span>
+				<span class="k">return</span> <span class="n">findLeafPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">entry</span><span class="o">.</span><span class="na">getLeftChild</span><span class="o">(),</span> <span class="n">perm</span><span class="o">,</span> <span class="n">f</span><span class="o">);</span>
+			<span class="o">}</span>
+		<span class="o">}</span>
+		<span class="c1">// 若不存在这样的entry 则走最右边的孩子节点
+</span><span class="c1"></span>		<span class="k">assert</span> <span class="n">entry</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="k">return</span> <span class="n">findLeafPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">entry</span><span class="o">.</span><span class="na">getRightChild</span><span class="o">(),</span> <span class="n">perm</span><span class="o">,</span> <span class="n">f</span><span class="o">);</span>
+	<span class="o">}</span>
+</code></pre></div><h2 id="insert--插入">Insert | 插入</h2>
+<blockquote>
+<p>In order to keep the tuples of the B+Tree in sorted order and maintain the integrity of the tree, we must insert tuples into the leaf page with the enclosing key range. As was mentioned above, <code>findLeafPage()</code> can be used to find the correct leaf page into which we should insert the tuple. However, each page has a limited number of slots and we need to be able to insert tuples even if the corresponding leaf page is full.</p>
+</blockquote>
+<p>为了维护B+树中的元祖<strong>有序</strong>, 并且维护树的完整性, 必须<!-- raw HTML omitted -->将元祖插入到叶子节点<!-- raw HTML omitted -->(带有封闭键范围). <code>findLeafPage()</code>可以用来定位应该插入元祖的正确叶子节点页面, 然而每个页面的空槽是有限的, <!-- raw HTML omitted -->即时这个叶子节点页面已满, 我们也要能够插入元祖<!-- raw HTML omitted -->.</p>
+<blockquote>
+<p>As described in the textbook, attempting to insert a tuple into a full leaf page should cause that page to split so that the tuples are evenly distributed between the two new pages. Each time a leaf page splits, a new entry corresponding to the first tuple in the second page will need to be added to the parent node. Occasionally, the internal node may also be full and unable to accept new entries. In that case, the parent should split and add a new entry to its parent. This may cause recursive splits and ultimately the creation of a new root node.</p>
+</blockquote>
+<p>尝试在一个满的叶子节点页面插入元祖, 将会导致这个<strong>页面分裂</strong>, 以便元祖在两个新的叶子节点页面之间均匀分布. 每次页面分裂时, 需要向<strong>在父节点页面中添加第二个页面中的第一个元祖对应的新条目.</strong> 但有时, 内部节点也可能已满, 则无法接受新条目, 这种情况父节点应该也进行页面分裂, 并向父节点的父节点添加新条目, 这可能会导致<strong>递归的页面拆分</strong>, 并最终创建新的根节点.</p>
+<blockquote>
+<p>In this exercise you will implement <code>splitLeafPage()</code> and <code>splitInternalPage()</code> in <code>BTreeFile.java</code>. If the page being split is the root page, you will need to create a new internal node to become the new root page, and update the <strong>BTreeRootPtrPage</strong>. Otherwise, you will need to fetch the parent page with READ_WRITE permissions, recursively split it if necessary, and add a new entry. You will find the function <code>getParentWithEmptySlots()</code> extremely useful for handling these different cases. In <code>splitLeafPage()</code> you should <strong>&ldquo;copy&rdquo; the key up to the parent page</strong>, while in <code>splitInternalPage()</code> you should <strong>&ldquo;push&rdquo; the key up to the parent page</strong>. See Figure 2 and review section 10.5 in the text book if this is confusing. Remember to update the parent pointers of the new pages as needed (for simplicity, we do not show parent pointers in the figures). When an internal node is split, you will need to update the parent pointers of all the children that were moved. You may find the function <code>updateParentPointers()</code> useful for this task. Additionally, remember to update the sibling pointers of any leaf pages that were split. Finally, return the page into which the new tuple or entry should be inserted, as indicated by the provided key field. (Hint: You do not need to worry about the fact that the provided key may actually fall in the exact center of the tuples/entries to be split. You should ignore the key during the split, and only use it to determine which of the two pages to return.)</p>
+</blockquote>
+<p>本次练习中将实现<code>BTreeFile.java</code>类中的<code>splitLeafPage()</code>和<code>splitInternalPage()</code>两个方法.</p>
+<p>如果<strong>被分裂的页面是根节点</strong>, 则需要创建一个新的内部节点让其成为新的根节点, 并且更新<code>BTreeRootPtrPage</code>.</p>
+<p>否则需要获取<code>READ_WRITE</code>权限的父节点页面, 必要时递归的拆分该页面, 并添加新条目.</p>
+<ul>
+<li><code>getParentWithEmptySlots()</code>负责处理这些不同的情况</li>
+</ul>
+<p><code>splitLeafPage()</code>中应该将 <code>key</code> 推送给父节点页面.</p>
+<p>记得按需更新拆分出来的新页面的<strong>父指针</strong>.</p>
+<p>当一个内部节点分裂时, 你需要更新所有被移动子节点们的父指针.</p>
+<ul>
+<li><code>updateParentPointers()</code>负责处理父指针更新问题</li>
+</ul>
+<p>记得更新被分裂叶子节点的<strong>兄弟指针</strong>.</p>
+<p>最后, 需要返回新元祖或者条目被插入的页面.</p>
+<p>提示: 无需担心所提供的 <code>key</code> 可能实际落在被拆分元祖/条目们的正中心. 拆分过程中, 仅使用 <code>key</code> 来确定要返回两个页面中哪一个.</p>
+<pre><code>如果分裂的是叶子节点, copy即可;
+</code></pre>
+<p><a href="https://github.com/MIT-DB-Class/simple-db-hw-2021/blob/master/splitting_leaf.png" target="_blank" rel="noopener noreffer"><!-- raw HTML omitted --></a></p>
+<pre><code>如果分裂的是内部节点, push即可.
+</code></pre>
+<p><a href="https://github.com/MIT-DB-Class/simple-db-hw-2021/blob/master/splitting_internal.png" target="_blank" rel="noopener noreffer"><!-- raw HTML omitted --></a></p>
+<blockquote>
+<p>Whenever you create a new page, either because of splitting a page or creating a new root page, call <code>getEmptyPage()</code> to get the new page. This function is an abstraction which will allow us to reuse pages that have been deleted due to merging (covered in the next section).</p>
+</blockquote>
+<p>当创建一个新页面时, 无论是因为拆分一个已存在页面, 还是创建一个新的根页面, 都通过调用 <code>getEmptyPage()</code> 方法来获取新页面. 此函数允许我们<strong>重用由于合并而删除的页面</strong>.</p>
+<blockquote>
+<p>We expect that you will interact with leaf and internal pages using <code>BTreeLeafPage.iterator()</code> and <code>BTreeInternalPage.iterator()</code> to iterate through the tuples/entries in each page. For convenience, we have also provided reverse iterators for both types of pages: <code>BTreeLeafPage.reverseIterator()</code> and<code>BTreeInternalPage.reverseIterator()</code>. These reverse iterators will be especially useful for moving a subset of tuples/entries from a page to its right sibling.</p>
+</blockquote>
+<p>使用<code>BTreeLeafPage.iterator()</code>和<code>BTreeInternalPage.iterator()</code>分别是叶子节点和内部节点的迭代器来遍历每个页面内的所有元祖或条目. 方便起见, 还提供了其反向迭代器, 用于将元祖/条目的子集从当前<strong>页面移动</strong>到右兄弟页面.</p>
+<blockquote>
+<p>As mentioned above, the internal page iterators use the interface defined in <code>BTreeEntry.java</code>, which has one key and two child pointers. It also has a recordId, which identifies the location of the key and child pointers on the underlying page. We think working with one entry at a time is a natural way to interact with internal pages, but it is important to keep in mind that the underlying page does not actually store a list of entries, but stores ordered lists of <em>m</em> keys and <em>m</em>+1 child pointers. Since the <code>BTreeEntry</code> is just an interface and not an object actually stored on the page, updating the fields of <code>BTreeEntry</code> will not modify the underlying page. In order to change the data on the page, you need to call <code>BTreeInternalPage.updateEntry()</code>. Furthermore, deleting an entry actually deletes only a key and a single child pointer, so we provide the funtions <code>BTreeInternalPage.deleteKeyAndLeftChild()</code> and<code>BTreeInternalPage.deleteKeyAndRightChild()</code> to make this explicit. The entry&rsquo;s recordId is used to find the key and child pointer to be deleted. Inserting an entry also only inserts a key and single child pointer (unless it&rsquo;s the first entry), so <code>BTreeInternalPage.insertEntry()</code> checks that one of the child pointers in the provided entry overlaps an existing child pointer on the page, and that inserting the entry at that location will keep the keys in sorted order.</p>
+</blockquote>
+<p>内部页面迭代器使用的是<code>BTreeEntry.java</code>定义的条目, <strong>条目内部包含了一个 key 和两个 child pointers 和 一个 recordId</strong> (定义了key和指针的位置: pageNo, tupleNo).</p>
+<p>虽然一次处理一个条目是与内部节点交互的比较自然的方式, 但很重要要记得, 页面实际存储的不是条目列表, 而是 m 个 key 和 m+1 个 child pointers. 因为 <code>BTreeEntry</code> 只是一个接口而不实际存储在页面上, 故更新 <code>BTreeEntry</code> 不会修改实际的页面.</p>
+<p><strong>[更新条目]</strong> 因此, <strong>为了能够修改页面上的数据, 需要调用 <code>BTreeInternalPage.updateEntry()</code> 方法</strong>.</p>
+<p><strong>[删除条目]</strong> 此外, 删除一个条目实际上只会删除一个 key 和一个 child pointer, 因此提供了 <code>BTreeInternalPage.deleteKeyAndLeftChild()</code> 和<code>BTreeInternalPage.deleteKeyAndRightChild()</code> 来明确如何删除.</p>
+<p>条目的 recordId 用来定位要删除的 key 和 pointer.</p>
+<p><strong>[插入条目]</strong> 插入一个条目只会插入一个 key 和一个 child pointer (插入第一个条目除外), 所以<code>BTreeInternalPage.insertEntry()</code>会检查提供的条目的一个子指针是否与页面上的现有子指针重叠, 并且还需要在该位置插入条目的同时维护 key 的有序.</p>
+<blockquote>
+<p>In both <code>splitLeafPage()</code> and <code>splitInternalPage()</code>, you will need to update the set of <code>dirtypages</code> with any newly created pages as well as any pages modified due to new pointers or new data. This is where <code>BTreeFile.getPage()</code> will come in handy. Each time you fetch a page, <code>BTreeFile.getPage()</code> will check to see if the page is already stored in the local cache (<code>dirtypages</code>), and if it can&rsquo;t find the requested page there, it fetches it from the buffer pool. <code>BTreeFile.getPage()</code> also adds pages to the <code>dirtypages</code> cache if they are fetched with read-write permission, since presumably they will soon be dirtied. One advantage of this approach is that it prevents loss of updates if the same pages are accessed multiple times during a single tuple insertion or deletion.</p>
+</blockquote>
+<p><code>splitLeafPage()</code> 和 <code>splitInternalPage()</code> 方法中, 需要使用任何新创建的页面以及任何由于新指针或者新数据而修改的页面, 将它们<strong>加入脏页缓存中.</strong></p>
+<p>这里 <code>BTreeFile.getPage()</code> 将派上用场, 每次获取一个页面时, 这个方法会检查是否页面已经被存储在脏页缓存, 如果找不到请求页面, 才从缓冲池中获取页面.</p>
+<p><code>BTreeFile.getPage()</code> 如果使用读写权限获取页面, 也会将页面添加到脏页缓存中. 因为这些页面即将被更新而变脏. 这种方法的一个有点是: 如果在一次元祖插入或删除期间多次访问同一个页面, 可以<strong>阻止更新丢失</strong>.</p>
+<blockquote>
+<p>Note that in a major departure from <code>HeapFile.insertTuple()</code>, <code>BTreeFile.insertTuple()</code> could return a large set of dirty pages, especially if any internal pages are split. As you may remember from previous labs, the set of dirty pages is returned to prevent the buffer pool from evicting dirty pages before they have been flushed.</p>
+</blockquote>
+<p><code>BTreeFile.insertTuple()</code> 将返回一大堆脏页, 特别是在有内部节点分裂的情况下.</p>
+<p>之前的实验中, 但会一组脏页, 以阻止缓冲池在其写入磁盘前将其驱逐(而丢失更新).</p>
+<hr>
+<blockquote>
+<p><strong>Warning</strong>: as the B+Tree is a complex data structure, it is helpful to understand the properties necessary of every legal B+Tree before modifying it. Here is an informal list:</p>
+<ol>
+<li>If a parent node points to a child node, the child nodes must point back to those same parents.</li>
+<li>If a leaf node points to a right sibling, then the right sibling points back to that leaf node as a left sibling.</li>
+<li>The first and last leaves must point to null left and right siblings respectively.</li>
+<li>Record Id&rsquo;s must match the page they are actually in.</li>
+<li>A <code>key</code> in a node with non-leaf children must be larger than any key in the left child, and smaller than any key in the right child.</li>
+<li>A <code>key</code> in a node with leaf children must be larger or equal than any key in the left child, and smaller or equal than any key in the right child.</li>
+<li>A node has either all non-leaf children, or all leaf children.</li>
+<li>A non-root node cannot be less than half full.</li>
+</ol>
+</blockquote>
+<p>B+树的属性:</p>
+<ol>
+<li>如果父节点指向子节点，则子节点必须指向同一父节点。</li>
+<li>如果叶子节点指向右兄弟节点，那么右兄弟节点以左兄弟节点的身份指向该叶子节点。</li>
+<li>第一片和最后一片叶子必须分别指向空的左兄弟节点和右兄弟节点。</li>
+<li>记录ID必须与他们实际在的页面匹配.</li>
+<li><strong>具有非叶 子节点</strong>的<code>key</code>必须<strong>大于左子节点中的任何键</strong>，并且<strong>小于右子节点中的任何键</strong>。</li>
+<li><strong>具有叶子 子节点</strong>中的<code>key</code>必须<strong>大于或等于左子键中的任何键</strong>，并且<strong>小于或等于右子键中的任何键</strong>。</li>
+<li>一个节点要么有全部非叶子的子节点, 要么全是叶子的子节点.</li>
+<li>非根节点中的<strong>条目数量不能少于一半</strong>; 叶子节点中的<strong>元祖数量不能少于一半</strong></li>
+</ol>
+<p><code>BTreeChecker.java</code> 用于对这些属性进行机械性的检查, 可以在你的实现中调用该方法调试.</p>
+<blockquote>
+<ol>
+<li>The checker method should always pass after initialization of the tree and before starting and after completing a full call to key insertion or deletion, but not necessarily within internal methods.</li>
+<li>A tree may be well formed (and therefore pass <code>checkRep()</code>) but still incorrect. For example, the empty tree will always pass <code>checkRep()</code>, but may not always be correct (if you just inserted a tuple, the tree should not be empty). ***</li>
+</ol>
+</blockquote>
+<p>注:</p>
+<ol>
+<li>检查器应该在树初始化后、开始之前或完成 key 的插入和删除之后调用, 而不必在方法内部调用.</li>
+<li>可能树通过了 <code>checkRep()</code> 但仍然不正确, 所以不要完全依赖检查器.</li>
+</ol>
+<hr>
+<h3 id="exercise-2-splitting-pages--拆分页面">Exercise 2: Splitting Pages | 拆分页面</h3>
+<blockquote>
+<p>Implement <code>BTreeFile.splitLeafPage()</code> and <code>BTreeFile.splitInternalPage()</code>.</p>
+<p>After completing this exercise, you should be able to pass the unit tests in <code>BTreeFileInsertTest.java</code>. You should also be able to pass the system tests in <code>systemtest/BTreeFileInsertTest.java</code>. Some of the system test cases may take a few seconds to complete. These files will test that your code inserts tuples and splits pages correcty, and also handles duplicate tuples.</p>
+</blockquote>
+<p>关键代码:</p>
+<pre><code>拆分已满的叶子节点:
+</code></pre>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="cm">/**
+</span><span class="cm">	 * Split a leaf page to make room for new tuples and recursively split the parent node
+</span><span class="cm">	 * as needed to accommodate a new entry. The new entry should have a key matching the key field
+</span><span class="cm">	 * of the first tuple in the right-hand page (the key is &#34;copied up&#34;), and child pointers 
+</span><span class="cm">	 * pointing to the two leaf pages resulting from the split.  Update sibling pointers and parent 
+</span><span class="cm">	 * pointers as needed.
+</span><span class="cm">	 * 将一个叶子页面拆分，以容纳新的元祖，必要时递归的拆分该叶子页面的父页面，以容纳一个新条目。
+</span><span class="cm">	 * 这个新条目应该和拆分的第二个页面的第一个元祖匹配，并且子指针应该指向这两个拆分后的页面。
+</span><span class="cm">	 * 必要时更新兄弟指针和父指针。
+</span><span class="cm">	 * 
+</span><span class="cm">	 * Return the leaf page into which a new tuple with key field &#34;field&#34; should be inserted.
+</span><span class="cm">	 * 返回实际插入key的叶子页面。
+</span><span class="cm">	 * 
+</span><span class="cm">	 * @param tid - the transaction id
+</span><span class="cm">	 * @param dirtypages - the list of dirty pages which should be updated with all new dirty pages
+</span><span class="cm">	 * @param page - the leaf page to split
+</span><span class="cm">	 * @param field - the key field of the tuple to be inserted after the split is complete. Necessary to know
+</span><span class="cm">	 * which of the two pages to return.
+</span><span class="cm">	 * @see #getParentWithEmptySlots(TransactionId, Map, BTreePageId, Field)
+</span><span class="cm">	 * 
+</span><span class="cm">	 * @return the leaf page into which the new tuple should be inserted
+</span><span class="cm">	 * @throws DbException
+</span><span class="cm">	 * @throws IOException
+</span><span class="cm">	 * @throws TransactionAbortedException
+</span><span class="cm">	 */</span>
+	<span class="kd">public</span> <span class="n">BTreeLeafPage</span> <span class="nf">splitLeafPage</span><span class="o">(</span><span class="n">TransactionId</span> <span class="n">tid</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">PageId</span><span class="o">,</span> <span class="n">Page</span><span class="o">&gt;</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">BTreeLeafPage</span> <span class="n">page</span><span class="o">,</span> <span class="n">Field</span> <span class="n">field</span><span class="o">)</span>
+			<span class="kd">throws</span> <span class="n">DbException</span><span class="o">,</span> <span class="n">IOException</span><span class="o">,</span> <span class="n">TransactionAbortedException</span> <span class="o">{</span>
+		<span class="c1">// some code goes here
+</span><span class="c1"></span>        <span class="c1">//
+</span><span class="c1"></span>        <span class="c1">// Split the leaf page by adding a new page on the right of the existing
+</span><span class="c1"></span>		<span class="c1">// page and moving half of the tuples to the new page.  Copy the middle key up
+</span><span class="c1"></span>		<span class="c1">// into the parent page, and recursively split the parent as needed to accommodate
+</span><span class="c1"></span>		<span class="c1">// the new entry.  getParentWithEmtpySlots() will be useful here.  Don&#39;t forget to update
+</span><span class="c1"></span>		<span class="c1">// the sibling pointers of all the affected leaf pages.  Return the page into which a 
+</span><span class="c1"></span>		<span class="c1">// tuple with the given key field should be inserted.
+</span><span class="c1"></span>
+		<span class="c1">// 在被分裂叶子页面的右边创建一个新的页面
+</span><span class="c1"></span>		<span class="n">BTreeLeafPage</span> <span class="n">newPage</span> <span class="o">=</span> <span class="o">(</span><span class="n">BTreeLeafPage</span><span class="o">)</span> <span class="n">getEmptyPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">BTreePageId</span><span class="o">.</span><span class="na">LEAF</span><span class="o">);</span> <span class="c1">// 创建一个新的空白叶子页面
+</span><span class="c1"></span>		<span class="c1">// 把被分裂叶子页面中的一半元祖移动到新页面中
+</span><span class="c1"></span>		<span class="n">Iterator</span><span class="o">&lt;</span><span class="n">Tuple</span><span class="o">&gt;</span> <span class="n">tupleIterator</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="na">iterator</span><span class="o">();</span>
+		<span class="kt">int</span> <span class="n">numTuples</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="na">getNumTuples</span><span class="o">();</span>
+		<span class="n">List</span><span class="o">&lt;</span><span class="n">Tuple</span><span class="o">&gt;</span> <span class="n">tuples</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;(</span><span class="n">numTuples</span><span class="o">);</span>
+		<span class="k">while</span> <span class="o">(</span><span class="n">tupleIterator</span><span class="o">.</span><span class="na">hasNext</span><span class="o">())</span> <span class="o">{</span>
+			<span class="n">tuples</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">tupleIterator</span><span class="o">.</span><span class="na">next</span><span class="o">());</span>
+		<span class="o">}</span>
+		<span class="k">assert</span> <span class="n">tuples</span><span class="o">.</span><span class="na">size</span><span class="o">()</span> <span class="o">==</span> <span class="n">numTuples</span><span class="o">;</span>	<span class="c1">// 断言页面已满
+</span><span class="c1"></span>		<span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">numTuples</span><span class="o">/</span><span class="n">2</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">numTuples</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+			<span class="n">page</span><span class="o">.</span><span class="na">deleteTuple</span><span class="o">(</span><span class="n">tuples</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">i</span><span class="o">));</span>
+			<span class="n">newPage</span><span class="o">.</span><span class="na">insertTuple</span><span class="o">(</span><span class="n">tuples</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">i</span><span class="o">));</span>
+		<span class="o">}</span>
+		<span class="c1">// 复制新页面的第一个key到父页面，并且按需递归的分裂父页面以容纳新条目
+</span><span class="c1"></span>		<span class="n">Field</span> <span class="n">middleField</span> <span class="o">=</span> <span class="n">tuples</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">numTuples</span><span class="o">/</span><span class="n">2</span><span class="o">).</span><span class="na">getField</span><span class="o">(</span><span class="n">keyField</span><span class="o">);</span>
+		<span class="c1">// getParentWithEmptySlots()
+</span><span class="c1"></span>		<span class="c1">// 获取有空位的父节点，必要时递归的向上分裂内部节点。
+</span><span class="c1"></span>		<span class="n">BTreeInternalPage</span> <span class="n">parentPage</span> <span class="o">=</span> <span class="n">getParentWithEmptySlots</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">page</span><span class="o">.</span><span class="na">getParentId</span><span class="o">(),</span> <span class="n">middleField</span><span class="o">);</span>
+		<span class="c1">//
+</span><span class="c1"></span>		<span class="c1">// 在维持其有序下插入新条目
+</span><span class="c1"></span>		<span class="n">BTreeEntry</span> <span class="n">entry</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BTreeEntry</span><span class="o">(</span><span class="n">middleField</span><span class="o">,</span> <span class="n">page</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">newPage</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
+		<span class="n">parentPage</span><span class="o">.</span><span class="na">insertEntry</span><span class="o">(</span><span class="n">entry</span><span class="o">);</span>
+		<span class="n">parentPage</span><span class="o">.</span><span class="na">updateEntry</span><span class="o">(</span><span class="n">entry</span><span class="o">);</span>
+		<span class="c1">// 更新受影响的叶子节点的兄弟指针
+</span><span class="c1"></span>		<span class="n">BTreePageId</span> <span class="n">rightPageId</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="na">getRightSiblingId</span><span class="o">();</span>
+		<span class="k">if</span> <span class="o">(</span><span class="n">rightPageId</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+			<span class="n">BTreeLeafPage</span> <span class="n">rightPage</span> <span class="o">=</span> <span class="o">(</span><span class="n">BTreeLeafPage</span><span class="o">)</span> <span class="n">getPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">rightPageId</span><span class="o">,</span> <span class="n">Permissions</span><span class="o">.</span><span class="na">READ_WRITE</span><span class="o">);</span>
+			<span class="n">rightPage</span><span class="o">.</span><span class="na">setLeftSiblingId</span><span class="o">(</span><span class="n">newPage</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
+		<span class="o">}</span>
+		<span class="n">page</span><span class="o">.</span><span class="na">setRightSiblingId</span><span class="o">(</span><span class="n">newPage</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
+		<span class="n">newPage</span><span class="o">.</span><span class="na">setLeftSiblingId</span><span class="o">(</span><span class="n">page</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
+		<span class="n">newPage</span><span class="o">.</span><span class="na">setRightSiblingId</span><span class="o">(</span><span class="n">rightPageId</span><span class="o">);</span>
+		<span class="c1">// 更新脏页缓存
+</span><span class="c1"></span>		<span class="n">getPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">parentPage</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">Permissions</span><span class="o">.</span><span class="na">READ_WRITE</span><span class="o">);</span>
+		<span class="n">getPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">page</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">Permissions</span><span class="o">.</span><span class="na">READ_WRITE</span><span class="o">);</span>
+		<span class="n">getPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">newPage</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">Permissions</span><span class="o">.</span><span class="na">READ_WRITE</span><span class="o">);</span>
+		<span class="c1">// 更新受影响的叶子节点的父指针
+</span><span class="c1"></span>		<span class="n">updateParentPointer</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">parentPage</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">page</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
+		<span class="n">updateParentPointer</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">parentPage</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">newPage</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
+		<span class="c1">// 在分裂后的两个页面中选择应该插入的叶子页面
+</span><span class="c1"></span>		<span class="k">return</span> <span class="n">field</span><span class="o">.</span><span class="na">compare</span><span class="o">(</span><span class="n">Op</span><span class="o">.</span><span class="na">LESS_THAN_OR_EQ</span><span class="o">,</span> <span class="n">middleField</span><span class="o">)</span> <span class="o">?</span> <span class="n">page</span> <span class="o">:</span> <span class="n">newPage</span><span class="o">;</span>
+	<span class="o">}</span>
+</code></pre></div><pre><code>拆分已满的内部节点:
+</code></pre>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-java" data-lang="java">	<span class="cm">/**
+</span><span class="cm">	 * Split an internal page to make room for new entries and recursively split its parent page
+</span><span class="cm">	 * as needed to accommodate a new entry. The new entry for the parent should have a key matching 
+</span><span class="cm">	 * the middle key in the original internal page being split (this key is &#34;pushed up&#34; to the parent). 
+</span><span class="cm">	 * The child pointers of the new parent entry should point to the two internal pages resulting 
+</span><span class="cm">	 * from the split. Update parent pointers as needed.
+</span><span class="cm">	 * 分裂一个内部节点用于容纳新条目，如果当前节点也满了就递归的分裂它的父节点。
+</span><span class="cm">	 * 父节点中的新条目应该匹配匹配原始内部节点中间条目（push而非copy）。
+</span><span class="cm">	 * 父节点的新条目的子指针应该指向被分裂的两个内部节点。
+</span><span class="cm">	 * 记得内部节点的父指针。
+</span><span class="cm">	 * 
+</span><span class="cm">	 * Return the internal page into which an entry with key field &#34;field&#34; should be inserted
+</span><span class="cm">	 * 返回新条目应该插入的父节点（维持有序，二选一）
+</span><span class="cm">	 * 
+</span><span class="cm">	 * @param tid - the transaction id
+</span><span class="cm">	 * @param dirtypages - the list of dirty pages which should be updated with all new dirty pages
+</span><span class="cm">	 * @param page - the internal page to split
+</span><span class="cm">	 * @param field - the key field of the entry to be inserted after the split is complete. Necessary to know
+</span><span class="cm">	 * which of the two pages to return.
+</span><span class="cm">	 * @see #getParentWithEmptySlots(TransactionId, Map, BTreePageId, Field)
+</span><span class="cm">	 * @see #updateParentPointers(TransactionId, Map, BTreeInternalPage)
+</span><span class="cm">	 * 
+</span><span class="cm">	 * @return the internal page into which the new entry should be inserted
+</span><span class="cm">	 * @throws DbException
+</span><span class="cm">	 * @throws IOException
+</span><span class="cm">	 * @throws TransactionAbortedException
+</span><span class="cm">	 */</span>
+	<span class="kd">public</span> <span class="n">BTreeInternalPage</span> <span class="nf">splitInternalPage</span><span class="o">(</span><span class="n">TransactionId</span> <span class="n">tid</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">PageId</span><span class="o">,</span> <span class="n">Page</span><span class="o">&gt;</span> <span class="n">dirtypages</span><span class="o">,</span>
+			<span class="n">BTreeInternalPage</span> <span class="n">page</span><span class="o">,</span> <span class="n">Field</span> <span class="n">field</span><span class="o">)</span> 
+					<span class="kd">throws</span> <span class="n">DbException</span><span class="o">,</span> <span class="n">IOException</span><span class="o">,</span> <span class="n">TransactionAbortedException</span> <span class="o">{</span>
+		<span class="c1">// some code goes here
+</span><span class="c1"></span>        <span class="c1">//
+</span><span class="c1"></span>        <span class="c1">// Split the internal page by adding a new page on the right of the existing
+</span><span class="c1"></span>		<span class="c1">// page and moving half of the entries to the new page.  Push the middle key up
+</span><span class="c1"></span>		<span class="c1">// into the parent page, and recursively split the parent as needed to accommodate
+</span><span class="c1"></span>		<span class="c1">// the new entry.  getParentWithEmtpySlots() will be useful here.  Don&#39;t forget to update
+</span><span class="c1"></span>		<span class="c1">// the parent pointers of all the children moving to the new page.  updateParentPointers()
+</span><span class="c1"></span>		<span class="c1">// will be useful here.  Return the page into which an entry with the given key field
+</span><span class="c1"></span>		<span class="c1">// should be inserted.
+</span><span class="c1"></span>
+<span class="c1">//		在已存在的内部节点的右边添加一个新的页面，并且移动半数的条目到新页面上。
+</span><span class="c1"></span>		<span class="n">BTreeInternalPage</span> <span class="n">newPage</span> <span class="o">=</span> <span class="o">(</span><span class="n">BTreeInternalPage</span><span class="o">)</span> <span class="n">getEmptyPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">BTreePageId</span><span class="o">.</span><span class="na">INTERNAL</span><span class="o">);</span>
+		<span class="n">Iterator</span><span class="o">&lt;</span><span class="n">BTreeEntry</span><span class="o">&gt;</span> <span class="n">entryIterator</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="na">iterator</span><span class="o">();</span>
+		<span class="kt">int</span> <span class="n">numEntries</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="na">getNumEntries</span><span class="o">();</span>
+		<span class="n">List</span><span class="o">&lt;</span><span class="n">BTreeEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;(</span><span class="n">numEntries</span><span class="o">);</span>
+		<span class="k">while</span> <span class="o">(</span><span class="n">entryIterator</span><span class="o">.</span><span class="na">hasNext</span><span class="o">())</span> <span class="o">{</span>
+			<span class="n">entries</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">entryIterator</span><span class="o">.</span><span class="na">next</span><span class="o">());</span>
+		<span class="o">}</span>
+		<span class="k">assert</span> <span class="n">entries</span><span class="o">.</span><span class="na">size</span><span class="o">()</span> <span class="o">==</span> <span class="n">numEntries</span><span class="o">;</span>
+		<span class="n">BTreeEntry</span> <span class="n">middleEntry</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+		<span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">numEntries</span><span class="o">/</span><span class="n">2</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">numEntries</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+			<span class="n">BTreeEntry</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">entries</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+			<span class="k">if</span> <span class="o">(</span><span class="n">i</span> <span class="o">==</span> <span class="n">numEntries</span><span class="o">/</span><span class="n">2</span><span class="o">)</span> <span class="o">{</span>
+				<span class="n">middleEntry</span> <span class="o">=</span> <span class="n">entry</span><span class="o">;</span>
+				<span class="n">page</span><span class="o">.</span><span class="na">deleteKeyAndRightChild</span><span class="o">(</span><span class="n">entry</span><span class="o">);</span>	<span class="c1">// 删除旧页面条目
+</span><span class="c1"></span>			<span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+				<span class="n">page</span><span class="o">.</span><span class="na">deleteKeyAndRightChild</span><span class="o">(</span><span class="n">entry</span><span class="o">);</span>	<span class="c1">// 删除旧页面条目
+</span><span class="c1"></span>				<span class="n">newPage</span><span class="o">.</span><span class="na">insertEntry</span><span class="o">(</span><span class="n">entry</span><span class="o">);</span>	<span class="c1">// 插入新页面条目
+</span><span class="c1"></span>			<span class="o">}</span>
+		<span class="o">}</span>
+<span class="c1">//		将中间的key上推到父页面中，递归的分裂其父页面（如果父页面也满）以容纳这个key的新条目 `getParentWithEmptySlots()`
+</span><span class="c1"></span>		<span class="k">assert</span> <span class="n">middleEntry</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span>
+		<span class="n">middleEntry</span><span class="o">.</span><span class="na">setLeftChild</span><span class="o">(</span><span class="n">page</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>		<span class="c1">// 注意这里没有实际的修改到条目内容
+</span><span class="c1"></span>		<span class="n">middleEntry</span><span class="o">.</span><span class="na">setRightChild</span><span class="o">(</span><span class="n">newPage</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
+		<span class="n">BTreeInternalPage</span> <span class="n">parentPage</span> <span class="o">=</span> <span class="n">getParentWithEmptySlots</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">page</span><span class="o">.</span><span class="na">getParentId</span><span class="o">(),</span> <span class="n">middleEntry</span><span class="o">.</span><span class="na">getKey</span><span class="o">());</span>
+		<span class="n">parentPage</span><span class="o">.</span><span class="na">insertEntry</span><span class="o">(</span><span class="n">middleEntry</span><span class="o">);</span>
+		<span class="n">parentPage</span><span class="o">.</span><span class="na">updateEntry</span><span class="o">(</span><span class="n">middleEntry</span><span class="o">);</span>
+		<span class="c1">//		更新脏页缓存
+</span><span class="c1"></span>		<span class="n">getPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">parentPage</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">Permissions</span><span class="o">.</span><span class="na">READ_WRITE</span><span class="o">);</span>
+		<span class="n">getPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">page</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">Permissions</span><span class="o">.</span><span class="na">READ_WRITE</span><span class="o">);</span>
+		<span class="n">getPage</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">newPage</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">Permissions</span><span class="o">.</span><span class="na">READ_WRITE</span><span class="o">);</span>
+<span class="c1">//		更新 新内部节点所有子节点的父指针 `updateParentPointers()`
+</span><span class="c1"></span>		<span class="n">updateParentPointers</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">newPage</span><span class="o">);</span>
+<span class="c1">//		更新拆分后的两个节点的父指针
+</span><span class="c1"></span>		<span class="n">updateParentPointer</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">parentPage</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">page</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
+		<span class="n">updateParentPointer</span><span class="o">(</span><span class="n">tid</span><span class="o">,</span> <span class="n">dirtypages</span><span class="o">,</span> <span class="n">parentPage</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">newPage</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
+<span class="c1">//		返回新条目应该插入的内部页面（二选一）
+</span><span class="c1"></span>		<span class="k">return</span> <span class="n">field</span><span class="o">.</span><span class="na">compare</span><span class="o">(</span><span class="n">Op</span><span class="o">.</span><span class="na">LESS_THAN_OR_EQ</span><span class="o">,</span> <span class="n">middleEntry</span><span class="o">.</span><span class="na">getKey</span><span class="o">())</span> <span class="o">?</span> <span class="n">page</span> <span class="o">:</span> <span class="n">newPage</span><span class="o">;</span>
+	<span class="o">}</span>
+</code></pre></div><hr>
+<h2 id="delete--删除">Delete | 删除</h2>
+<blockquote>
+<p>In order to keep the tree balanced and not waste unnecessary space, deletions in a B+Tree may cause pages to redistribute tuples (Figure 3) or, eventually, to merge (see Figure 4). You may find it useful to review section 10.6 in the textbook.</p>
+<p>为了维护B+树的平衡, 同时避免不必要的空间浪费, 在B+树中的删除操作可能会导致<strong>元祖在页面间的重新分配</strong>, 或者导致<strong>页面的合并</strong>.</p>
+<p>As described in the textbook, attempting to delete a tuple from a leaf page that is less than half full should cause that page to either steal tuples from one of its siblings or merge with one of its siblings. If one of the page&rsquo;s siblings has tuples to spare, the tuples should be evenly distributed between the two pages, and the parent&rsquo;s entry should be updated accordingly (see Figure 3). However, if the sibling is also at minimum occupancy, then the two pages should merge and the entry deleted from the parent (Figure 4). In turn, deleting an entry from the parent may cause the parent to become less than half full. In this case, the parent should steal entries from its siblings or merge with a sibling. This may cause recursive merges or even deletion of the root node if the last entry is deleted from the root node.</p>
+<p>试图从一个少于半满的叶子页面删除一个元祖, 会导致该页面要么从兄弟页面“偷”元祖, 或者与其中一个兄弟页面合并.
+如果其兄弟页面有多余的元祖, 则采用重新在两个页面间分配元祖的方案, 相应的父页面的条目也应该被更新.
+然而如果没有多余的元祖(即其兄弟页面都刚好是半满), 则两个页面应该合并成为一个页面, 并从父页面中删除条目. 反过来, 从父页面中删除条目也可能会导致父页面的元祖数少于半满, 在这种情况, 父页面要么从兄弟页面“偷”页面, 要么与兄弟页面合并, 这可能会导致递归的合并甚至导致跟节点的删除(如果追溯到根节点, 并从根节点中删除了唯一的条目)</p>
+<p>In this exercise you will implement <code>stealFromLeafPage()</code>, <code>stealFromLeftInternalPage()</code>, <code>stealFromRightInternalPage()</code>, <code>mergeLeafPages()</code> and <code>mergeInternalPages()</code> in <code>BTreeFile.java</code>. In the first three functions you will implement code to evenly redistribute tuples/entries if the siblings have tuples/entries to spare. Remember to update the corresponding key field in the parent (look carefully at how this is done in Figure 3 - keys are effectively &ldquo;rotated&rdquo; through the parent). In<code>stealFromLeftInternalPage()</code>/<code>stealFromRightInternalPage()</code>, you will also need to update the parent pointers of the children that were moved. You should be able to reuse the function <code>updateParentPointers()</code> for this purpose.</p>
+<p>本练习中你将实现 <code>BTreeFile.java</code> 中的如下方法:</p>
+<ul>
+<li><code>stealFromLeafPage()</code></li>
+<li><code>stealFromLeftInternalPage()</code></li>
+<li><code>stealFromRightInternalPage()</code></li>
+<li><code>mergeLeafPages()</code></li>
+<li><code>mergeInternalPages()</code></li>
+</ul>
+<p>前三个方法用于<strong>从兄弟页面中“偷”元祖或者条目</strong>, 记得更新父页面的相关的key值, 相当于做了一次“旋转”.
+在<code>stealFromLeftInternalPage()</code> 和 <code>stealFromRightInternalPage()</code> 中需要更新被移动的子项的父指针.</p>
+<p>In <code>mergeLeafPages()</code> and <code>mergeInternalPages()</code> you will implement code to merge pages, effectively performing the inverse of <code>splitLeafPage()</code> and <code>splitInternalPage()</code>. You will find the function <code>deleteParentEntry()</code>extremely useful for handling all the different recursive cases. Be sure to call <code>setEmptyPage()</code> on deleted pages to make them available for reuse. As with the previous exercises, we recommend using <code>BTreeFile.getPage()</code> to encapsulate the process of fetching pages and keeping the list of dirty pages up to date.</p>
+<p>后两个方法用于<strong>合并页面</strong>, 高效的完成 <code>splitLeafPage()</code> 和 <code>splitInternalPage()</code>的逆过程. 当处理所有不同的递归情形时, <code>deleteParentEntry()</code> 方法特别有用. 确保在被删除的页面上调用 <code>setEmptyPage()</code> 以便于页面被重新使用. 建议使用 <code>BTreeFile.getPage()</code> 封装获取页面的过程, 以保持脏页面列表的更新.</p>
+</blockquote>
+<p>在页面重新分配key</p>
+<p><!-- raw HTML omitted --></p>
+<p>合并页面:</p>
+<p><!-- raw HTML omitted --></p>
+<hr>
+<h4 id="exercise-3-redistributing-pages--页面重分配">Exercise 3: Redistributing pages | 页面重分配</h4>
+<blockquote>
+<p>Implement <code>BTreeFile.stealFromLeafPage()</code>, <code>BTreeFile.stealFromLeftInternalPage()</code>,<code>BTreeFile.stealFromRightInternalPage()</code>.</p>
+<p>After completing this exercise, you should be able to pass some of the unit tests in <code>BTreeFileDeleteTest.java</code>(such as <code>testStealFromLeftLeafPage</code> and <code>testStealFromRightLeafPage</code>). The system tests may take several seconds to complete since they create a large B+ tree in order to fully test the system.</p>
+</blockquote>
+<p>均匀分配: 从兄弟节点获取的元祖或条目数量为→两者之和的一半再减去兄弟节点.</p>
+<hr>
+<h3 id="exercise-4-merging-pages--合并页面">Exercise 4: Merging pages | 合并页面</h3>
+<blockquote>
+<p>Implement <code>BTreeFile.mergeLeafPages()</code> and <code>BTreeFile.mergeInternalPages()</code>.</p>
+<p>Now you should be able to pass all unit tests in <code>BTreeFileDeleteTest.java</code> and the system tests in <code>systemtest/BTreeFileDeleteTest.java</code>.</p>
+</blockquote>
+<h2 id="transactions--支持事务">Transactions | 支持事务</h2>
+<blockquote>
+<p>You may remember that B+ trees can prevent phantom tuples from showing up between two consecutive range scans by using next-key locking. Since SimpleDB uses page-level, strict two-phase locking, protection against phantoms effectively comes for free if the B+ tree is implemented correctly. Thus, at this point you should also be able to pass <code>BTreeNextKeyLockingTest</code>.</p>
+<p>B+树通过使用<code>next-key</code>上锁, 来防止幽灵元祖同时出现两个连续的范围查询. simpleDB使用的是页面级别、严格的两阶段锁.</p>
+<p>Additionally, you should be able to pass the tests in <code>test/simpledb/BTreeDeadlockTest.java</code> if you have implemented locking correctly inside of your B+ tree code.</p>
+<p>If everything is implemented correctly, you should also be able to pass the BTreeTest system test. We expect many people to find <code>BTreeTest</code> difficult, so it&rsquo;s not required, but we&rsquo;ll give extra credit to anyone who can run it successfully. Please note that this test may take up to a minute to complete.</p>
+</blockquote>
+<h3 id="bonus-exercise-5-btreereversescan--反向迭代器">Bonus Exercise 5: BTreeReverseScan | 反向迭代器</h3>
+<blockquote>
+<p>reate and implement a class called <code>BTreeReverseScan</code> which scans the <code>BTreeFile</code> in reverse, given an optional <code>IndexPredicate</code>.</p>
+<p>You can use <code>BTreeScan</code> as a starting point, but you will probably need to implement a reverse iterator in <code>BTreeFile</code>. You will also likely need to implement a separate version of <code>BTreeFile.findLeafPage()</code>. We have provided reverse iterators on <code>BTreeLeafPage</code> and <code>BTreeInternalPage</code> which you may find useful. You should also write code to test that your implementation works correctly. <code>BTreeScanTest.java</code> is a good place to look for ideas.</p>
+</blockquote>
+<p>实现一个B+树文件的反向扫描迭代器.</p>
+<hr>
+<ul>
+<li><i class="far fa-square fa-fw"></i> <code>BTreeTest</code> 把事务、多线程、索引综合在了一起, 貌似我在B+树的插入条目的逻辑有点问题&hellip; 之后再改吧 - -/</li>
+</ul>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2021-10-12</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"></div>
+            <div class="post-info-share">
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/posts/mit_6.830_lab4/" class="prev" rel="prev" title="MIT 6.830 Lab4 Transactions"><i class="fas fa-angle-left fa-fw"></i>MIT 6.830 Lab4 Transactions</a>
+            <a href="/posts/mit_6.830_lab6/" class="next" rel="next" title="MIT 6.830 Lab6 Rollback &amp; Recovery">MIT 6.830 Lab6 Rollback &amp; Recovery<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+</article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">由 <a href="https://gohugo.io/" target="_blank" rel="noopener noreffer" title="Hugo 0.88.1">Hugo</a> 强力驱动 | 主题 - <a href="https://github.com/dillonzq/LoveIt" target="_blank" rel="noopener noreffer" title="LoveIt 0.2.10"><i class="far fa-kiss-wink-heart fa-fw"></i> LoveIt</a>
+                </div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2021</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank"></a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw"></i>
+            </a>
+        </div><script type="text/javascript" src="/lib/smooth-scroll/smooth-scroll.min.js"></script><script type="text/javascript" src="/lib/lazysizes/lazysizes.min.js"></script><script type="text/javascript" src="/lib/clipboard/clipboard.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":10},"comment":{}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

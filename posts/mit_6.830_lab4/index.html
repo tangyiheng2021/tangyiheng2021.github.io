@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+        <title>MIT 6.830 Lab4 Transactions - TYH | BLOG</title><meta name="Description" content=""><meta property="og:title" content="MIT 6.830 Lab4 Transactions" />
+<meta property="og:description" content="Lab4 Transactions Get Started  事务 严格的二阶段锁(使用该锁来确保事务的隔离性和原子性)  Transactions  A transaction is a group of database actions (e.g., inserts, deletes, and reads) that are executed atomically; that is, either all of the actions complete or none of them do, and it is not apparent to an outside observer of the database that these actions were not completed as a part of a single, indivisible action.
+ 事务是一组原子执行的数据库操作(如插入、删除和查询);
+也就是说, 所有操作要么都执行完成, 要么都没有执行完成." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://tangyiheng2021.github.io/posts/mit_6.830_lab4/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-10-12T20:35:52+08:00" />
+<meta property="article:modified_time" content="2021-10-12T20:35:52+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="MIT 6.830 Lab4 Transactions"/>
+<meta name="twitter:description" content="Lab4 Transactions Get Started  事务 严格的二阶段锁(使用该锁来确保事务的隔离性和原子性)  Transactions  A transaction is a group of database actions (e.g., inserts, deletes, and reads) that are executed atomically; that is, either all of the actions complete or none of them do, and it is not apparent to an outside observer of the database that these actions were not completed as a part of a single, indivisible action.
+ 事务是一组原子执行的数据库操作(如插入、删除和查询);
+也就是说, 所有操作要么都执行完成, 要么都没有执行完成."/>
+<meta name="application-name" content="TYH | BLOG">
+<meta name="apple-mobile-web-app-title" content="TYH | BLOG"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab4/" /><link rel="prev" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab3/" /><link rel="next" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab5/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="stylesheet" href="/lib/fontawesome-free/all.min.css"><link rel="stylesheet" href="/lib/animate/animate.min.css"><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "MIT 6.830 Lab4 Transactions",
+        "inLanguage": "en",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/tangyiheng2021.github.io\/posts\/mit_6.830_lab4\/"
+        },"genre": "posts","keywords": "数据库","wordcount":  2542 ,
+        "url": "https:\/\/tangyiheng2021.github.io\/posts\/mit_6.830_lab4\/","datePublished": "2021-10-12T20:35:52+08:00","dateModified": "2021-10-12T20:35:52+08:00","publisher": {
+            "@type": "Organization",
+            "name": "tangyiheng"},"author": {
+                "@type": "Person",
+                "name": "tangyiheng"
+            },"description": ""
+    }
+    </script></head>
+    <body header-desktop="" header-mobile=""><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : '' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="TYH | BLOG">TYH | BLOG</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="TYH | BLOG">TYH | BLOG</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><a class="menu-item" href="/posts/" title="">文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animated flipInX">MIT 6.830 Lab4 Transactions</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>tangyiheng</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/mit-6.830/"><i class="far fa-folder fa-fw"></i>MIT 6.830</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2021-10-12">2021-10-12</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;约 2542 字&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;预计阅读 12 分钟&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#get-started">Get Started</a></li>
+    <li><a href="#transactions">Transactions</a></li>
+    <li><a href="#the-acid-properties">The ACID Properties</a></li>
+    <li><a href="#recovery--buffer-management">Recovery &amp; Buffer Management</a></li>
+    <li><a href="#granting-locks--申请和释放锁">Granting Locks | 申请和释放锁</a></li>
+    <li><a href="#exercise-1">Exercise 1</a></li>
+    <li><a href="#lock-lifetime--锁的一生">Lock Lifetime | 锁的一生</a></li>
+    <li><a href="#exercise-2">Exercise 2</a></li>
+    <li><a href="#implementing-no-steal">Implementing NO STEAL</a></li>
+    <li><a href="#exercise-3">Exercise 3</a></li>
+    <li><a href="#transactions-1">Transactions</a></li>
+    <li><a href="#exercise-4">Exercise 4</a></li>
+    <li><a href="#deadlocks-and-aborts">Deadlocks and Aborts</a></li>
+    <li><a href="#exercise-5">Exercise 5</a></li>
+    <li><a href="#design-alternatives">Design alternatives</a></li>
+    <li><a href="#bonus-exercise-6">Bonus Exercise 6</a></li>
+    <li><a href="#优化的点">优化的点:</a></li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h1 id="lab4-transactions">Lab4 Transactions</h1>
+<h2 id="get-started">Get Started</h2>
+<ul>
+<li>事务</li>
+<li>严格的二阶段锁(使用该锁来确保事务的隔离性和原子性)</li>
+</ul>
+<h2 id="transactions">Transactions</h2>
+<blockquote>
+<p>A transaction is a group of database actions (e.g., inserts, deletes, and reads) that are executed <em>atomically</em>; that is, either all of the actions complete or none of them do, and it is not apparent to an outside observer of the database that these actions were not completed as a part of a single, indivisible action.</p>
+</blockquote>
+<p>事务是一组<strong>原子执行</strong>的数据库操作(如插入、删除和查询);</p>
+<p>也就是说, 所有操作要么都执行完成, 要么都没有执行完成.</p>
+<p>事务对于外部是透明的, 并不知道这些操作不是作为单个不可分割操作的一部分完成的.</p>
+<h2 id="the-acid-properties">The ACID Properties</h2>
+<blockquote>
+<p>To help you understand how transaction management works in SimpleDB, we briefly review how it ensures that the ACID properties are satisfied:</p>
+<ul>
+<li><strong>Atomicity</strong>: Strict two-phase locking and careful buffer management ensure atomicity.</li>
+<li><strong>Consistency</strong>: The database is transaction consistent by virtue of atomicity. Other consistency issues (e.g., key constraints) are not addressed in SimpleDB.</li>
+<li><strong>Isolation</strong>: Strict two-phase locking provides isolation.</li>
+<li><strong>Durability</strong>: A FORCE buffer management policy ensures durability (see Section 2.3 below).</li>
+</ul>
+</blockquote>
+<p>事务的ACID特性:</p>
+<ul>
+<li>A 原子性: 由严格二阶段锁和小心的缓冲区管理确保原子性.</li>
+<li>C 一致性: 数据库因为原子性而具有事务的一致性, simpleDB没有解决其他一致性问题(如键约束)</li>
+<li>I 隔离性: 由严格二阶段锁确保隔离性.</li>
+<li>D 持久性: 强制刷回磁盘的缓冲池管理策略可以确保持久性.</li>
+</ul>
+<h2 id="recovery--buffer-management">Recovery &amp; Buffer Management</h2>
+<blockquote>
+<p>To simplify your job, we recommend that you implement a <strong>NO STEAL/FORCE buffer management policy</strong>.</p>
+<p>As we discussed in class, this means that:</p>
+<ul>
+<li>You shouldn&rsquo;t evict dirty (updated) pages from the buffer pool if they are locked by an uncommitted transaction (this is NO STEAL).</li>
+<li>On transaction commit, you should force dirty pages to disk (e.g., write the pages out) (this is FORCE).</li>
+</ul>
+<p>To further simplify your life, you may assume that SimpleDB will not crash while processing a <code>transactionComplete</code>command. Note that these three points mean that <strong>you do not need to implement log-based recovery in this lab</strong>, since <!-- raw HTML omitted -->you will never need to undo any work (you never evict dirty pages) and you will never need to redo any work<!-- raw HTML omitted --> (you <!-- raw HTML omitted -->force updates on commit and will not crash during commit processing<!-- raw HTML omitted -->).</p>
+</blockquote>
+<p>NO STEAL/FORCE 缓冲区管理策略:</p>
+<ul>
+<li>如果脏页被<!-- raw HTML omitted -->未提交的事务<!-- raw HTML omitted -->锁定, 则不能从缓冲区将其驱逐</li>
+<li>在<!-- raw HTML omitted -->事务提交<!-- raw HTML omitted -->时, 应该强制将脏页面刷回磁盘</li>
+</ul>
+<h2 id="granting-locks--申请和释放锁">Granting Locks | 申请和释放锁</h2>
+<blockquote>
+<p>You will need to add calls to SimpleDB (in <code>BufferPool</code>, for example), that allow a caller to <!-- raw HTML omitted -->request or release a (shared or exclusive) lock on a specific object on behalf of a specific transaction<!-- raw HTML omitted -->.</p>
+<p>We recommend <!-- raw HTML omitted -->locking at <em>page</em> granularity<!-- raw HTML omitted -->; please do not implement table-level locking (even though it is possible) for simplicity of testing. The rest of this document and our unit tests assume page-level locking.</p>
+<p>You will need to <!-- raw HTML omitted -->create data structures that keep track of which locks each transaction holds<!-- raw HTML omitted --> and check to see if a lock should be granted to a transaction when it is requested.</p>
+<p>You will need to implement shared and exclusive locks; recall that these work as follows:</p>
+<ul>
+<li>Before a transaction can read an object, it must have a shared lock on it.</li>
+<li>Before a transaction can write an object, it must have an exclusive lock on it.</li>
+<li>Multiple transactions can have a shared lock on an object.</li>
+<li>Only one transaction may have an exclusive lock on an object.</li>
+<li>If transaction <em>t</em> is the only transaction holding a shared lock on an object <em>o</em>, <em>t</em> may <em>upgrade</em> its lock on <em>o</em> to an exclusive lock.</li>
+</ul>
+<p>If a transaction requests a lock that cannot be immediately granted, your code should <em>block</em>, waiting for that lock to become available (i.e., be released by another transaction running in a different thread). Be careful about race conditions in your lock implementation &mdash; think about how concurrent invocations to your lock may affect the behavior. (you way wish to read about <a href="http://docs.oracle.com/javase/tutorial/essential/concurrency/sync.html" target="_blank" rel="noopener noreffer">Synchronization</a> in Java).</p>
+</blockquote>
+<p>在simpleDB中添加允许调用者代表特定事务在特定对象上<strong>请求和释放(共享或排它)锁</strong>的机制.</p>
+<p>建议实现<strong>页面粒度的锁</strong>; 为了简化测试不要实现表粒度的锁.</p>
+<p>需要创建<strong>数据结构用来记录每个事务持有的锁,</strong> 并且检查当事务请求锁时是否应该授予该锁.</p>
+<p>需要实现<strong>共享锁和排他锁(独占锁)</strong>. 锁的工作原理:</p>
+<ul>
+<li>事务在读取对象之前, 必须有该对象的共享锁</li>
+<li>事务在写入对象之前, 必须有该对象的排他锁</li>
+<li>多个事务可以在一个对象上同时拥有一个共享锁</li>
+<li>只有一个事务能够在一个对象上拥有独占锁</li>
+<li>如果只有一个事务<code>t</code>在一个对象<code>o</code>上持有共享锁, 则<code>t</code>可以将其在<code>o</code>上的共享锁升级为排他锁</li>
+</ul>
+<p>如果事务请求的锁暂时无法被授予, 则应该阻塞, 知道锁重新变为可授予状态(即其他线程中运行的一个事务释放该锁). 在锁机制实现过程中小心race condition</p>
+<h2 id="exercise-1">Exercise 1</h2>
+<blockquote>
+<p>Write the methods that acquire and release locks in BufferPool. Assuming you are using page-level locking, you will need to complete the following:</p>
+<ul>
+<li>Modify <code>getPage()</code> to block and acquire the desired lock before returning a page.</li>
+<li>Implement <code>unsafeReleasePage()</code>. This method is primarily used for testing, and at the end of transactions.</li>
+<li>Implement <code>holdsLock()</code> so that logic in Exercise 2 can determine whether a page is already locked by a transaction.</li>
+</ul>
+<p>You may find it helpful to define a <code>LockManager</code> class that is responsible for maintaining state about transactions and locks, but the design decision is up to you.</p>
+<p>You may need to implement the next exercise before your code passes the unit tests in LockingTest.</p>
+</blockquote>
+<p>实现在<code>BufferPool</code>中需要申请和释放锁的方法, 假设使用的是页面级别的锁</p>
+<ul>
+<li>修改<code>BufferPool</code>中的<code>getPage()</code>方法: 阻塞直到获取指定页面的锁</li>
+<li>实现<code>unsafeReleasePage()</code>方法, 此方法主要用于测试, 当事务结束时会调用, 释放事务在指定页面上的所有锁</li>
+<li>实现<code>holdsLock()</code>, 以便Exercise 2中查询事务在指定页面上是否有锁</li>
+</ul>
+<p>建议定义一个<code>LockManager</code>类负责维护事务和锁的状态.(获取、释放锁, 以及检测事务持锁的状态)</p>
+<ul>
+<li>
+<p>维护一个<strong>页面ID到锁集合</strong>(一个页面上可能会有多把共享锁)的<code>concurrentHashMap</code>的数据结构</p>
+</li>
+<li>
+<p>定义一个<code>Lock</code>类, 类里面要定义<strong>锁类型</strong>, 以及事务ID(表明锁被哪个事务所持有)</p>
+<ul>
+<li>锁类型: 共享锁(读锁); 排他锁(写锁)</li>
+<li>事务: 事务ID, 当前锁被哪个事务持有</li>
+</ul>
+</li>
+<li>
+<p><code>boolean acquireLock(pageId, TransactionId, LockType)</code>: 某一事务<strong>获取</strong>指定页面上的锁(共享锁或者排他锁)</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-text" data-lang="text">若页面锁集合为空,则直接分配锁
+获取指定页面的锁集合,遍历锁集合
+	若找到相同事务的锁:
+      若该锁和请求锁的类型一致,则可以分配;
+      若该锁为排他锁,请求锁为共享锁,则可以分配;
+      若该锁为共享锁,请求锁为排他锁,则需要对共享锁升级(共享锁-&gt;排他锁).
+	若不存在相同事务的锁,说明该事务未在该页面上锁,则找到锁集合的第一个锁:
+      若该锁为共享锁
+          若请求锁也为共享锁,则可以分配;
+          若请求锁为排他锁,则不可以分配;
+    若该锁为排他锁,则不可以分配
+</code></pre></div></li>
+<li>
+<p><code>boolean releaseLock(pageId, TransactionId)</code>: 某一事务<strong>释放</strong>指定页面上的锁(共享锁或者排他锁)</p>
+</li>
+<li>
+<p><code>boolean holdsLock(pageId, TransactionId)</code>: 检测某一事务就指定页面上<strong>是否持有</strong>锁</p>
+<ul>
+<li>循环遍历指定页面上的锁集合, 判断每个锁的事务ID是否一致</li>
+</ul>
+</li>
+</ul>
+<p>需要通过<code>LockingTest</code>单元测试.</p>
+<p>获取锁时如果失败, 需要进入阻塞, 直到其他事务释放该锁(这时需要释放锁时通知其他线程的机制)</p>
+<p>释放锁如果成功, 需要通知其他进入阻塞的线程, 以唤醒重新申请锁</p>
+<h2 id="lock-lifetime--锁的一生">Lock Lifetime | 锁的一生</h2>
+<blockquote>
+<p>You will need to implement <strong>strict two-phase locking</strong>. This means that transactions should acquire the appropriate type of lock on any object before accessing that object and shouldn&rsquo;t release any locks until after the transaction commits.</p>
+<p>Fortunately, the SimpleDB design is such that it is possible to obtain locks on pages in <code>BufferPool.getPage()</code>before you read or modify them. So, rather than adding calls to locking routines in each of your operators, we recommend acquiring locks in <code>getPage()</code>. Depending on your implementation, it is possible that you may not have to acquire a lock anywhere else. It is up to you to verify this!</p>
+<p>You will need to acquire a <em>shared</em> lock on any page (or tuple) before you read it, and you will need to acquire an <em>exclusive</em> lock on any page (or tuple) before you write it. You will notice that we are already passing around <code>Permissions</code> objects in the BufferPool; these objects indicate the type of lock that the caller would like to have on the object being accessed (we have given you the code for the <code>Permissions</code> class.)</p>
+<p>Note that your implementation of <code>HeapFile.insertTuple()</code> and <code>HeapFile.deleteTuple()</code>, as well as the implementation of the iterator returned by <code>HeapFile.iterator()</code> should access pages using <code>BufferPool.getPage()</code>. Double check that these different uses of <code>getPage()</code> pass the correct permissions object (e.g., <code>Permissions.READ_WRITE</code> or <code>Permissions.READ_ONLY</code>). You may also wish to double check that your implementation of <code>BufferPool.insertTuple()</code> and <code>BufferPool.deleteTupe()</code> call <code>markDirty()</code> on any of the pages they access (you should have done this when you implemented this code in lab 2, but we did not test for this case.)</p>
+<p>After you have acquired locks, you will need to think about when to release them as well. It is clear that you should release all locks associated with a transaction after it has committed or aborted to ensure strict 2PL. However, it is possible for there to be other scenarios in which releasing a lock before a transaction ends might be useful. For instance, you may release a shared lock on a page after scanning it to find empty slots (as described below).</p>
+</blockquote>
+<p>需要实现<strong>严格两阶段锁</strong>, 意味着事务必须在访问对象之前<strong>获取</strong>其对象上的合适类型的锁, 直到事务提交后才能<strong>释放</strong>所有锁.</p>
+<p>建议在<code>BufferPool.getPage()</code>的内部申请锁, 这样就不用把获取锁的代码分散到各个地方.</p>
+<p>在读取任何页面之前需要申请一把共享锁, 在写任何页面之前需要申请一把排他锁, <code>Permissions</code>可以用来检查调用者的读写类型.</p>
+<p>&hellip;</p>
+<p>在获取锁之后, 需要思考释放这些锁的时机. 显然应该在事务提交或终止后释放与之关联的所有锁, 以保证严格的 2PL. 然而，在其他情况下，<strong>在事务结束前释放锁可能是有用的。例如，您可以在扫描页面以找到空插槽后释放页面上的共享锁</strong>.</p>
+<h2 id="exercise-2">Exercise 2</h2>
+<blockquote>
+<p>Ensure that you acquire and release locks throughout SimpleDB. Some (but not necessarily all) actions that you should verify work properly:</p>
+<ul>
+<li>Reading tuples off of pages during a SeqScan (if you implemented locking in <code>BufferPool.getPage()</code>, this should work correctly as long as your <code>HeapFile.iterator()</code> uses <code>BufferPool.getPage()</code>.)</li>
+<li>Inserting and deleting tuples through BufferPool and HeapFile methods (if you implemented locking in <code>BufferPool.getPage()</code>, this should work correctly as long as <code>HeapFile.insertTuple()</code> and<code>HeapFile.deleteTuple()</code> use <code>BufferPool.getPage()</code>.)</li>
+</ul>
+<p>You will also want to <strong>think especially hard about acquiring and releasing locks</strong> in the following situations:</p>
+<ul>
+<li>Adding a new page to a <code>HeapFile</code>. When do you physically write the page to disk? Are there race conditions with other transactions (on other threads) that might need special attention at the HeapFile level, regardless of page-level locking?</li>
+<li>Looking for an empty slot into which you can insert tuples. Most implementations scan pages looking for an empty slot, and will need a READ_ONLY lock to do this. Surprisingly, however, if a transaction <em>t</em> finds no free slot on a page <em>p</em>, <em>t</em> may immediately release the lock on <em>p</em>. Although this apparently contradicts the rules of two-phase locking, it is ok because <em>t</em> did not use any data from the page, such that a concurrent transaction <em>t'</em> which updated <em>p</em> cannot possibly effect the answer or outcome of <em>t</em>.</li>
+</ul>
+<p>At this point, your code should pass the unit tests in LockingTest.</p>
+</blockquote>
+<p>一些行为(应该验证其能工作):(都需要保证都是<strong>从缓冲池中拿页面</strong>)</p>
+<ul>
+<li>在做顺序扫描期间从页面读取元祖</li>
+<li>在<code>BufferPool</code>和<code>HeapFile</code>的插入和删除元祖的方法</li>
+</ul>
+<p>以下情况需要特别小心(申请和释放锁):</p>
+<ul>
+<li>在堆文件中添加一个新页面时:</li>
+<li>当查询空槽进行插入元祖时:</li>
+</ul>
+<p>需要通过单元测试:</p>
+<ul>
+<li><code>LockingTest</code></li>
+</ul>
+<h2 id="implementing-no-steal">Implementing NO STEAL</h2>
+<blockquote>
+<p>Modifications from a transaction are written to disk only after it commits. This means we can abort a transaction by discarding the dirty pages and rereading them from disk. Thus, we must not evict dirty pages. This policy is called NO STEAL.</p>
+<p>You will need to modify the <code>evictPage</code> method in <code>BufferPool</code>. In particular, it must never evict a dirty page. If your eviction policy prefers a dirty page for eviction, you will have to find a way to evict an alternative page. In the case where all pages in the buffer pool are dirty, you should throw a <code>DbException</code>. If your eviction policy evicts a clean page, be mindful of any locks transactions may already hold to the evicted page and handle them appropriately in your implementation.</p>
+</blockquote>
+<p>事务中的修改只有当事务提交之后才会写回磁盘, 这意味着对于事务终止的情况我们可以通过简单的<strong>丢弃脏页并且重新从磁盘读取该页面</strong>. 因此我们不必驱逐脏页, 这种策略叫做<code>NO STEAL</code></p>
+<p>你需要修改缓冲池中的<code>evictPage()</code>方法: 具体来说, <strong>不必驱逐任一个脏页面</strong>. 如果你的驱逐策略更喜欢驱逐一个脏页面. 则你必须寻找一个驱逐替代页面的方式. 如果缓冲池所有页面都是脏页面, 则你需要抛出异常. <strong>如果你的驱逐策略驱逐了一个干净的页面, 则需要注意任何被驱逐页面可能持有的事务锁</strong>, 并且谨慎处理它们.</p>
+<h2 id="exercise-3">Exercise 3</h2>
+<blockquote>
+<p>Implement the necessary logic for page eviction without evicting dirty pages in the <code>evictPage</code> method in <code>BufferPool</code>.</p>
+</blockquote>
+<p>在缓冲池中的驱逐页面方法实现必要的页面驱逐逻辑,同时<strong>不会驱逐脏页面</strong>.</p>
+<p>为了实现非脏页面的驱逐策略, 在驱逐策略中增加判断脏页面的逻辑, 如果lrulist弹出页面为脏, 则重新找页面知道找到一个干净页面进行替换</p>
+<h2 id="transactions-1">Transactions</h2>
+<blockquote>
+<p>In SimpleDB, a <code>TransactionId</code> object is created at the beginning of each query. This object is passed to each of the operators involved in the query. When the query is complete, the <code>BufferPool</code> method <code>transactionComplete</code> is called.</p>
+<p>Calling this method either <em>commits</em> or <em>aborts</em> the transaction, specified by the parameter flag <code>commit</code>. At any point during its execution, an operator may throw a <code>TransactionAbortedException</code> exception, which indicates an internal error or deadlock has occurred. The test cases we have provided you with create the appropriate <code>TransactionId</code>objects, pass them to your operators in the appropriate way, and invoke <code>transactionComplete</code> when a query is finished. We have also implemented <code>TransactionId</code>.</p>
+</blockquote>
+<p>每个查询开始时就创建一个<code>TransactionId</code>对象, 该对象被传递给查询语句中的每个算子, 当查询完成时, 调用缓冲池的<code>transactionComplete</code>方法.</p>
+<p>调用这个方法要么是提交事务,要么是终止事务(回滚), 通过<code>commit</code>标志来区分这两种情况.在执行期间,一个算子可能会抛出异常<code>TransactionAbortedException</code>, 表示一个内部错误或者死锁发生.</p>
+<h2 id="exercise-4">Exercise 4</h2>
+<blockquote>
+<p>Implement the <code>transactionComplete()</code> method in <code>BufferPool</code>. Note that there are two versions of transactionComplete, one which accepts an additional boolean <strong>commit</strong> argument, and one which does not. The version without the additional argument should always commit and so can simply be implemented by calling <code>transactionComplete(tid, true)</code>.</p>
+<p>When you commit, you should flush dirty pages associated to the transaction to disk. When you abort, you should revert any changes made by the transaction by restoring the page to its on-disk state.</p>
+<p>Whether the transaction commits or aborts, you should also release any state the <code>BufferPool</code> keeps regarding the transaction, including releasing any locks that the transaction held.</p>
+<p>At this point, your code should pass the <code>TransactionTest</code> unit test and the <code>AbortEvictionTest</code> system test. You may find the <code>TransactionTest</code> system test illustrative, but it will likely fail until you complete the next exercise.</p>
+</blockquote>
+<p>实现缓冲池中的<code>transactionComplete()</code>方法, 注意该方法重载了两次. 没有<code>commit</code>参数的方法总是视为事务提交.</p>
+<p>当<strong>提交事务</strong>时,应该将与事务相关的脏页面刷回磁盘. 而当<strong>终止事务</strong>时, 应该会回滚任何由事务所造成的改变, 通过重新从磁盘读取与事务相关的脏页即可恢复页面.</p>
+<p>无论事务是提交还是终止, 都应该释放缓冲池中保存的任何关于该事务的任何轧辊台, 包括释放该事务持有的任何锁.</p>
+<p>需要通过<code>TransactionTest</code>单元测试和<code>AbortEvictionTest</code>系统测试.</p>
+<h2 id="deadlocks-and-aborts">Deadlocks and Aborts</h2>
+<blockquote>
+<p>It is possible for transactions in SimpleDB to deadlock (if you do not understand why, we recommend reading about deadlocks in Ramakrishnan &amp; Gehrke). You will need to detect this situation and throw a<code>TransactionAbortedException</code>.</p>
+<p>There are many possible ways to detect deadlock. A strawman example would be to implement a simple timeout policy that aborts a transaction if it has not completed after a given period of time. For a real solution, you may implement cycle-detection in a dependency graph data structure as shown in lecture. In this scheme, you would check for cycles in a dependency graph periodically or whenever you attempt to grant a new lock, and abort something if a cycle exists. After you have detected that a deadlock exists, you must decide how to improve the situation. Assume you have detected a deadlock while transaction <em>t</em> is waiting for a lock. If you&rsquo;re feeling homicidal, you might abort <strong>all</strong> transactions that <em>t</em> is waiting for; this may result in a large amount of work being undone, but you can guarantee that <em>t</em> will make progress. Alternately, you may decide to abort <em>t</em> to give other transactions a chance to make progress. This means that the end-user will have to retry transaction <em>t</em>.</p>
+<p>Another approach is to use global orderings of transactions to avoid building the wait-for graph. This is sometimes preferred for performance reasons, but transactions that could have succeeded can be aborted by mistake under this scheme. Examples include the WAIT-DIE and WOUND-WAIT schemes.</p>
+</blockquote>
+<p>死锁: 一组事务在申请彼此所持有的锁, 而造成的循环等待(阻塞)的情况.</p>
+<p>在simpleDB中, 需要实现检测死锁的机制, 然后抛出异常<code>TransactionAbortedException</code>(事务终止异常).</p>
+<p>有许多检测死锁的方式:</p>
+<ul>
+<li>
+<p>strawman方法是实现一个<strong>简单的超时策略</strong>, 如果一个事务在给定时间内未完成, 则视为死锁, 就终止该事务. (效率太低!)</p>
+</li>
+<li>
+<p>真正的解决方案应该是实现<strong>在一个依赖图的数据结构中进行环检测.</strong>(死锁检测)</p>
+<ul>
+<li>定期检查依赖图中的环, 或者每当你尝试加锁时, 如果存在环, 就终止事务</li>
+<li>当检测到死锁存在后, 需要决定如何改善这种处境</li>
+<li>假设在事务 t 等待一个锁时检测到了一个死锁, 可以终止 t 所等待的所有事务, 但这可能会造成大量事务回滚, 但可以保证事务 t 继续向前推进; 另外也可以终止事务 t 给其他事务向前推进的机会.但这意味着终端用户需要重做事务 t</li>
+</ul>
+</li>
+<li>
+<p>另外一种方案是<strong>使用事务的全局排序来避免建立等待图</strong>.(死锁预防)</p>
+<ul>
+<li>处于性能考虑, 这种方案有时是首选, 但是这种方案可能会让本可以成功的事务被错误终止, 如WAIT-DIE和WOUND-WAIT 导致发生不必要的回滚.</li>
+</ul>
+</li>
+</ul>
+<h2 id="exercise-5">Exercise 5</h2>
+<blockquote>
+<p>Implement deadlock detection or prevention in <code>src/simpledb/BufferPool.java</code>. You have many design decisions for your deadlock handling system, but it is not necessary to do something highly sophisticated. We expect you to do better than a simple timeout on each transaction. A good starting point will be to implement cycle-detection in a wait-for graph before every lock request, and you will receive full credit for such an implementation. Please describe your choices in the lab writeup and list the pros and cons of your choice compared to the alternatives.</p>
+<p>You should ensure that your code aborts transactions properly when a deadlock occurs, by throwing a<code>TransactionAbortedException</code> exception. This exception will be caught by the code executing the transaction (e.g., <code>TransactionTest.java</code>), which should call <code>transactionComplete()</code> to cleanup after the transaction. You are not expected to automatically restart a transaction which fails due to a deadlock &ndash; you can assume that highe r level code will take care of this.</p>
+<p>We have provided some (not-so-unit) tests in <code>test/simpledb/DeadlockTest.java</code>. They are actually a bit involved, so they may take more than a few seconds to run (depending on your policy). If they seem to hang indefinitely, then you probably have an unresolved deadlock. These tests construct simple deadlock situations that your code should be able to escape.</p>
+<p>Note that there are two timing parameters near the top of <code>DeadLockTest.java</code>; these determine the frequency at which the test checks if locks have been acquired and the waiting time before an aborted transaction is restarted. You may observe different performance characteristics by tweaking these parameters if you use a timeout-based detection method. The tests will output <code>TransactionAbortedExceptions</code> corresponding to resolved deadlocks to the console.</p>
+<p>Your code should now should pass the <code>TransactionTest</code> system test (which may also run for quite a long time depending on your implementation).</p>
+<p>At this point, you should have a recoverable database, in the sense that if the database system crashes (at a point other than <code>transactionComplete()</code>) or if the user explicitly aborts a transaction, the effects of any running transaction will not be visible after the system restarts (or the transaction aborts.) You may wish to verify this by running some transactions and explicitly killing the database server.</p>
+</blockquote>
+<p>在 <code>src/simpledb/BufferPool.java</code> 中实现死锁检测或预防。对于你的死锁处理系统，你有很多设计决定，但没有必要做一些非常复杂的事情。我们希望你能做得比每个事务的简单超时更好。一个好的起点是<strong>在每个锁请求前的等待图中实现环检测</strong>，这样的实现将得到全额奖励。请在实验报告中描述你的选择，并列出你的选择与其他选择相比的优点和缺点。</p>
+<p>你应该通过抛出<code>TransactionAbortedException</code>异常来<strong>确保你的代码在发生死锁时正确中止事务</strong>。这个异常将被执行事务的代码捕获（例如，<code>TransactionTest.java</code>），它应该调用 <code>transactionComplete()</code> 来清理事务。我们不期望你自动重启一个因死锁而失败的事务&ndash;你可以假设更高级别的代码会处理这个问题。</p>
+<p>我们在 <code>test/simpledb/DeadlockTest.java</code> 中提供了一些（不是单元的）测试。它们实际上有点复杂，所以它们可能需要超过几秒钟的时间来运行（取决于你的策略）。<!-- raw HTML omitted -->如果它们似乎无限期地挂起，那么你可能有一个未解决的死锁<!-- raw HTML omitted -->。<!-- raw HTML omitted -->这些测试构建了简单的死锁情况<!-- raw HTML omitted -->，你的代码应该能够逃脱。</p>
+<p>请注意，在<code>DeadLockTest.java</code>的顶部有两个计时参数；它们决定了测试检查锁是否被获取的频率，以及中止的事务被重新启动前的等待时间。如果你使用基于超时的检测方法，你可以通过调整这些参数观察到不同的性能特征。测试将把解决死锁所对应的<code>TransactionAbortedExceptions</code>输出到控制台。</p>
+<p>你的代码现在应该通过<code>TransactionTest</code>系统测试（根据你的实现，它也可能运行相当长的时间）。</p>
+<p>在这一点上，你应该有一个<strong>可恢复</strong>的数据库，也就是说，如果数据库系统崩溃（在 <code>transactionComplete()</code> 以外的地方），或者如果用户明确地中止一个事务，那么在系统重新启动（或事务中止）后，任何正在运行的事务的影响将不可见。 你可能希望通过运行一些事务和明确地杀死数据库服务器来验证这点。</p>
+<p>单元测试:</p>
+<ul>
+<li><code>DeadlockTest</code></li>
+</ul>
+<p>系统测试:</p>
+<ul>
+<li><code>TransactionTest</code></li>
+</ul>
+<p>简单的超时机制很难确定一个合适的超时时间.</p>
+<h2 id="design-alternatives">Design alternatives</h2>
+<blockquote>
+<p>During the course of this lab, we have identified some substantial design choices that you have to make:</p>
+<ul>
+<li>Locking granularity: page-level versus tuple-level</li>
+<li>Deadlock handling: detection vs. prevention, aborting yourself vs. others.</li>
+</ul>
+</blockquote>
+<p>可权衡的设计选择:</p>
+<ul>
+<li>锁粒度: 页面级别 vs 元祖级别</li>
+<li>死锁解决方案: 死锁检测 vs 死锁预防; 终止本身事务 vs 终止其他事务</li>
+</ul>
+<h2 id="bonus-exercise-6">Bonus Exercise 6</h2>
+<p>实现两种选择方案, 然后通过实验来评估性能.</p>
+<hr>
+<h2 id="优化的点">优化的点:</h2>
+<ul>
+<li>可以设计一个基于元祖粒度的锁管理器, 以提供更高的并发度.</li>
+<li>设计一个基于依赖图环检测的死锁检测机制, 开个后台线程检测环, 或者在获取锁之前做一次环检测, 检测到死锁就终止当前事务或者其余阻塞中的事务. 这种方案适合死锁发生概率比较小的情况</li>
+<li>设计一个死锁预防机制(具体什么策略还没想好), 这种方案适合死锁发生概率比较大的情况.</li>
+</ul>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2021-10-12</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"></div>
+            <div class="post-info-share">
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/posts/mit_6.830_lab3/" class="prev" rel="prev" title="MIT 6.830 Lab3 Query Optimization"><i class="fas fa-angle-left fa-fw"></i>MIT 6.830 Lab3 Query Optimization</a>
+            <a href="/posts/mit_6.830_lab5/" class="next" rel="next" title="MIT 6.830 Lab5 B&#43;Tree Index">MIT 6.830 Lab5 B&#43;Tree Index<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+</article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">由 <a href="https://gohugo.io/" target="_blank" rel="noopener noreffer" title="Hugo 0.88.1">Hugo</a> 强力驱动 | 主题 - <a href="https://github.com/dillonzq/LoveIt" target="_blank" rel="noopener noreffer" title="LoveIt 0.2.10"><i class="far fa-kiss-wink-heart fa-fw"></i> LoveIt</a>
+                </div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2021</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank"></a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw"></i>
+            </a>
+        </div><script type="text/javascript" src="/lib/smooth-scroll/smooth-scroll.min.js"></script><script type="text/javascript" src="/lib/lazysizes/lazysizes.min.js"></script><script type="text/javascript" src="/lib/clipboard/clipboard.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":10},"comment":{}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>

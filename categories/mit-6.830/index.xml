@@ -1,11 +1,9 @@
 <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
     <channel>
-        <title>TYH | BLOG</title>
-        <link>https://tangyiheng2021.github.io/</link>
-        <description>TYH | BLOG</description>
-        <generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Tue, 12 Oct 2021 20:35:57 &#43;0800</lastBuildDate>
-            <atom:link href="https://tangyiheng2021.github.io/index.xml" rel="self" type="application/rss+xml" />
-        <item>
+        <title>MIT 6.830 - 分类 - TYH | BLOG</title>
+        <link>https://tangyiheng2021.github.io/categories/mit-6.830/</link>
+        <description>MIT 6.830 - 分类 - TYH | BLOG</description>
+        <generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Tue, 12 Oct 2021 20:35:57 &#43;0800</lastBuildDate><atom:link href="https://tangyiheng2021.github.io/categories/mit-6.830/" rel="self" type="application/rss+xml" /><item>
     <title>MIT 6.830 Lab6 Rollback &amp; Recovery</title>
     <link>https://tangyiheng2021.github.io/posts/mit_6.830_lab6/</link>
     <pubDate>Tue, 12 Oct 2021 20:35:57 &#43;0800</pubDate>

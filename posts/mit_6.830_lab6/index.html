@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+        <title>MIT 6.830 Lab6 Rollback &amp; Recovery - TYH | BLOG</title><meta name="Description" content=""><meta property="og:title" content="MIT 6.830 Lab6 Rollback &amp; Recovery" />
+<meta property="og:description" content="Lab 6 Rollback &amp; Recovery Outline  In this lab you will implement log-based rollback for aborts and log-based crash recovery. We supply you with the code that defines the log format and appends records to a log file at appropriate times during transactions. You will implement rollback and recovery using the contents of the log file.
+本实验中你将实现基于日志的中止回滚机制和基于日志的奔溃恢复机制. 我们提供了定义日志格式的代码, 并在事务过程中的恰当时机追加记录到日志文件中. 你将使用日志文件的内容来实现回滚和恢复.
+The logging code we provide generates records intended for physical whole-page undo and redo." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://tangyiheng2021.github.io/posts/mit_6.830_lab6/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-10-12T20:35:57+08:00" />
+<meta property="article:modified_time" content="2021-10-12T20:35:57+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="MIT 6.830 Lab6 Rollback &amp; Recovery"/>
+<meta name="twitter:description" content="Lab 6 Rollback &amp; Recovery Outline  In this lab you will implement log-based rollback for aborts and log-based crash recovery. We supply you with the code that defines the log format and appends records to a log file at appropriate times during transactions. You will implement rollback and recovery using the contents of the log file.
+本实验中你将实现基于日志的中止回滚机制和基于日志的奔溃恢复机制. 我们提供了定义日志格式的代码, 并在事务过程中的恰当时机追加记录到日志文件中. 你将使用日志文件的内容来实现回滚和恢复.
+The logging code we provide generates records intended for physical whole-page undo and redo."/>
+<meta name="application-name" content="TYH | BLOG">
+<meta name="apple-mobile-web-app-title" content="TYH | BLOG"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab6/" /><link rel="prev" href="https://tangyiheng2021.github.io/posts/mit_6.830_lab5/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="stylesheet" href="/lib/fontawesome-free/all.min.css"><link rel="stylesheet" href="/lib/animate/animate.min.css"><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "MIT 6.830 Lab6 Rollback \u0026 Recovery",
+        "inLanguage": "en",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/tangyiheng2021.github.io\/posts\/mit_6.830_lab6\/"
+        },"genre": "posts","keywords": "数据库","wordcount":  769 ,
+        "url": "https:\/\/tangyiheng2021.github.io\/posts\/mit_6.830_lab6\/","datePublished": "2021-10-12T20:35:57+08:00","dateModified": "2021-10-12T20:35:57+08:00","publisher": {
+            "@type": "Organization",
+            "name": "tangyiheng"},"author": {
+                "@type": "Person",
+                "name": "tangyiheng"
+            },"description": ""
+    }
+    </script></head>
+    <body header-desktop="" header-mobile=""><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : '' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="TYH | BLOG">TYH | BLOG</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="TYH | BLOG">TYH | BLOG</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><a class="menu-item" href="/posts/" title="">文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animated flipInX">MIT 6.830 Lab6 Rollback &amp; Recovery</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel=" author" class="author"><i class="fas fa-user-circle fa-fw"></i>tangyiheng</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/mit-6.830/"><i class="far fa-folder fa-fw"></i>MIT 6.830</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2021-10-12">2021-10-12</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;约 769 字&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;预计阅读 4 分钟&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#outline">Outline</a></li>
+    <li><a href="#rollback">Rollback</a>
+      <ul>
+        <li><a href="#exercise-1-logfilerollback"><strong>Exercise 1: LogFile.rollback()</strong></a></li>
+      </ul>
+    </li>
+    <li><a href="#recovery">Recovery</a>
+      <ul>
+        <li><a href="#exercise-2-logfilerecover"><strong>Exercise 2: LogFile.recover()</strong></a></li>
+      </ul>
+    </li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h1 id="lab-6-rollback--recovery">Lab 6 Rollback &amp; Recovery</h1>
+<h2 id="outline">Outline</h2>
+<blockquote>
+<p>In this lab you will implement log-based rollback for aborts and log-based crash recovery. We supply you with the code that defines the log format and appends records to a log file at appropriate times during transactions. You will implement rollback and recovery using the contents of the log file.</p>
+<p>本实验中你将实现<strong>基于日志的中止回滚</strong>机制和<strong>基于日志的奔溃恢复</strong>机制. 我们提供了定义日志格式的代码, 并在事务过程中的恰当时机追加记录到日志文件中. 你将使用日志文件的内容来实现回滚和恢复.</p>
+<p>The logging code we provide generates records intended for physical whole-page undo and redo. When a page is first read in, our code remembers the original content of the page as a before-image. When a transaction updates a page, the corresponding log record contains that remembered before-image as well as the content of the page after modification as an after-image. You&rsquo;ll use the before-image to roll back during aborts and to undo loser transactions during recovery, and the after-image to redo winners during recovery.</p>
+<p>我们提供的日志代码生成的记录旨在用于整个物理页面的撤销<code>undo</code>和重做<code>redo</code>. 当一个页面第一次被读入时, 我们的代码会记住页面的原始内容, 保存为一个前像<code>before-image</code>. 当一个事务更新一个页面时, 相应的日志记录包含之前记住的后像<code>before-image</code>和修改后的页面内容, 以此作为一个<code>after-image</code>. 你将使用前像<code>before-image</code>在中止过程中回滚, 并在恢复过程中撤销<code>undo</code>失败的事务, 而后像<code>after-image</code>在恢复过程中重做<code>redo</code>成功的事务.</p>
+<p>We are able to get away with doing whole-page physical UNDO (while ARIES must do logical UNDO) because we are doing page level locking and because we have no indices which may have a different structure at UNDO time than when the log was initially written. The reason page-level locking simplifies things is that if a transaction modified a page, it must have had an exclusive lock on it, which means no other transaction was concurrently modifying it, so we can UNDO changes to it by just overwriting the whole page.</p>
+<p>我们能够摆脱整个页面的物理<code>undo</code>(而 ARIES 算法必须做逻辑<code>undo</code>), 因为我们正在做页面级别的锁, 并且我们没有索引, 在<code>undo</code>时间和最初写入日志不同.
+页级锁带来了简化, 因为如果一个事务修改了一个页面, 那么它必定拥有一个页面上的排他锁, 这意味着没有其他事务在同时修改它. 所以我们可以通过简单的覆盖整个页面来<code>undo</code>事务对页面的修改.</p>
+<p>Your BufferPool already implements abort by deleting dirty pages, and pretends to implement atomic commit by forcing dirty pages to disk only at commit time. Logging allows more flexible buffer management (STEAL and NO-FORCE), and our test code calls <code>BufferPool.flushAllPages()</code> at certain points in order to exercise that flexibility.</p>
+<p>你的缓冲池通过删除脏页来实现中止, 并通过提交时强制将脏页刷回磁盘来试图实现原子性的提交. 日志机制允许更灵活的缓冲池管理(STEAL 和 NO FORCE), 我们的测试代码在某些必要地方调用<code>BufferPool.flushAllPages()</code>, 以行使这种灵活性.</p>
+</blockquote>
+<ul>
+<li><code>undo</code> : 消除一个不完整或者被中止的事务所带来的影响.</li>
+<li><code>redo</code> : 重新恢复一个已提交的事务所带来的影响, 以确保持久性.</li>
+</ul>
+<p><code>steal policy</code> 用于决定DBMS是否允许将一个**<!-- raw HTML omitted -->未提交的事务<!-- raw HTML omitted -->覆盖非易失性存储中对象的最新提交值**. (即事务可以写入未提交更新到磁盘)
+即是否允许让未提交事务的更新写入磁盘.</p>
+<ul>
+<li><code>STEAL</code> : 允许 → 需要 <code>undo</code> 回滚中止事务的更新</li>
+<li><code>NO STEAL</code> : 不允许</li>
+</ul>
+<p><code>force policy</code> 用于决定DBMS是否确保在允许**<!-- raw HTML omitted -->事务提交之前<!-- raw HTML omitted -->, 事务的所有更新都反映在非易失性存储**中.
+即是否让提交事务的更新立即写入磁盘.</p>
+<ul>
+<li><code>FORCE</code> : 强制执行</li>
+<li><code>NO FORCE</code> : 不强制执行. → 需要 <code>redo</code> 已提交事务的更新</li>
+</ul>
+<hr>
+<p>简单来说, simpleDB 同大多数数据库一样, 为了平时效率牺牲了恢复效率, 采取的是<code>steal/no force</code>策略, 故需要使用<code>undo</code>和<code>redo</code>来保证数据库的一致性、原子性、持久性.</p>
+<hr>
+<p><strong>正向扫描</strong>: 得到对应事务的一系列操作流水</p>
+<p><strong>数据重置</strong>: 在日志扫描得到的操作记录基础上, 根据事务最终运行情况, 进行<code>undo</code>或者<code>redo</code>来保证数据库的一致性.</p>
+<h2 id="rollback">Rollback</h2>
+<blockquote>
+<p>Read the comments in <code>LogFile.java</code> for a description of the log file format. You should see in <code>LogFile.java</code> a set of functions, such as <code>logCommit()</code>, that generate each kind of log record and append it to the log.</p>
+<blockquote>
+<p>阅读 <code>LogFile.java</code> 中的注释, 以了解<strong>日志文件格式</strong>. 你应该在 <code>LogFile.java</code> 中看到一组函数, 如 <code>logCommit()</code> , 它们<strong>生成每一种日志记录并将其追加到日志</strong>中.</p>
+</blockquote>
+<p>Your first job is to implement the <code>rollback()</code> function in <code>LogFile.java</code>. This function is called when a transaction aborts, before the transaction releases its locks. Its job is to un-do any changes the transaction may have made to the database.</p>
+<blockquote>
+<p>你的第一项工作是实现 <code>rollback()</code> 函数: <strong>当一个事务中止时, 但在该事务释放其锁之前</strong>, 调用该函数. 该函数负责<strong>撤销 <code>undo</code> 事务可能会对数据库做出的任何改变</strong>.</p>
+</blockquote>
+<p>Your <code>rollback()</code> should read the log file, find all update records associated with the aborting transaction, extract the before-image from each, and write the before-image to the table file. Use <code>raf.seek()</code> to move around in the log file, and <code>raf.readInt()</code> etc. to examine it. Use <code>readPageData()</code> to read each of the before- and after-images. You can use the map <code>tidToFirstLogRecord</code> (which maps from a transaction id to an offset in the heap file) to determine where to start reading the log file for a particular transaction. You will need to make sure that you discard any page from the buffer pool whose before-image you write back to the table file.</p>
+<blockquote>
+<p>你的 <code>rollback()</code> 函数应该<!-- raw HTML omitted -->读取日志文件, 找到所有与中止事务相关的更新日志<!-- raw HTML omitted -->, <!-- raw HTML omitted -->从每条日志中提取出前像<code>before image</code>, 并将前像写入表文件<!-- raw HTML omitted -->.使用 <code>raf.seek()</code> 在日志文件中进行移动, 使用 <code>raf.readInt()</code> 来检查它.使用 <code>readPageData()</code> 来<!-- raw HTML omitted -->读取每个页面的前像和后像<!-- raw HTML omitted -->. 你可以使用映射 <code>tidToFirstLogRecord</code> (从事务Id映射到堆文件中的偏移量) 来<strong>确定<!-- raw HTML omitted -->从哪里开始读取特定事务的日志文件<!-- raw HTML omitted --></strong>.
+你需要确保从缓冲池<strong>丢弃</strong>的任何页面(这些页面的前像已经被写回到表文件中). 将恢复后的脏页面刷回磁盘</p>
+</blockquote>
+<p>As you develop your code, you may find the <code>Logfile.print()</code> method useful for displaying the current contents of the log.</p>
+<blockquote>
+<p><code>Logfile.print()</code> 函数用于显示当前日志内容.</p>
+</blockquote>
+</blockquote>
+<hr>
+<h3 id="exercise-1-logfilerollback"><strong>Exercise 1: LogFile.rollback()</strong></h3>
+<blockquote>
+<p>Implement <code>LogFile.rollback()</code>.</p>
+<p>After completing this exercise, you should be able to pass the <code>TestAbort</code> and <code>TestAbortCommitInterleaved</code> sub-tests of the <code>LogTest</code> system test.</p>
+</blockquote>
+<p>通过事务Id, 找到其在日志文件中的起始位置, 扫描操作日志, 得到该事务的操作序列, 反向重放并且撤销<code>undo</code>相关操作(即用前像覆盖当前数据字段).</p>
+<p>记得在恢复数据时将其标记为<code>dirty</code>并刷回磁盘.</p>
+<h2 id="recovery">Recovery</h2>
+<blockquote>
+<p>If the database crashes and then reboots, <code>LogFile.recover()</code> will be called before any new transactions start. Your implementation should:</p>
+<ol>
+<li>Read the last checkpoint, if any.</li>
+<li>Scan forward from the checkpoint (or start of log file, if no checkpoint) to build the set of loser transactions. Re-do updates during this pass. You can safely start re-do at the checkpoint because <code>LogFile.logCheckpoint()</code>flushes all dirty buffers to disk.</li>
+<li>Un-do the updates of loser transactions.</li>
+</ol>
+<blockquote>
+<p>如果数据库崩溃, 然后重启, 则 <code>LogFile,recover()</code> 函数将在任何新事务开始之前被调用. 具体实现如下</p>
+<ol>
+<li>首先读取上一次的检查点</li>
+<li>从检查点向前扫描(如果没有检查点, 则从日志文件的开始), 以建立失败事务的集合.
+你可以安全的在检查点进行重做<code>redo</code>, 因为 <code>LogFile.logCheckpoint()</code> 会将所有的脏缓存刷回磁盘.</li>
+<li>撤销<code>undo</code>失败事务所做的更新.</li>
+</ol>
+</blockquote>
+</blockquote>
+<hr>
+<h3 id="exercise-2-logfilerecover"><strong>Exercise 2: LogFile.recover()</strong></h3>
+<blockquote>
+<p>Implement <code>LogFile.recover()</code>.</p>
+<p>After completing this exercise, you should be able to pass all of the <code>LogTest</code> system test.</p>
+</blockquote>
+<p>通过最新的一个检查点, 然后正向扫描日志记录文件, 构建 undolist 和 redolist,
+然后对 undolist 反向扫描做 undo, 对 redolist 正向扫描做 redo.</p>
+<hr>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="https://pic2.zhimg.com/v2-8118c7489874d20e98ad48ca20515c39_b.jpg"
+        data-srcset="https://pic2.zhimg.com/v2-8118c7489874d20e98ad48ca20515c39_b.jpg, https://pic2.zhimg.com/v2-8118c7489874d20e98ad48ca20515c39_b.jpg 1.5x, https://pic2.zhimg.com/v2-8118c7489874d20e98ad48ca20515c39_b.jpg 2x"
+        data-sizes="auto"
+        alt="https://pic2.zhimg.com/v2-8118c7489874d20e98ad48ca20515c39_b.jpg"
+        title="img" /></p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2021-10-12</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"></div>
+            <div class="post-info-share">
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/posts/mit_6.830_lab5/" class="prev" rel="prev" title="MIT 6.830 Lab5 B&#43;Tree Index"><i class="fas fa-angle-left fa-fw"></i>MIT 6.830 Lab5 B&#43;Tree Index</a></div>
+</div>
+</article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">由 <a href="https://gohugo.io/" target="_blank" rel="noopener noreffer" title="Hugo 0.88.1">Hugo</a> 强力驱动 | 主题 - <a href="https://github.com/dillonzq/LoveIt" target="_blank" rel="noopener noreffer" title="LoveIt 0.2.10"><i class="far fa-kiss-wink-heart fa-fw"></i> LoveIt</a>
+                </div><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2021</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank"></a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw"></i>
+            </a>
+        </div><script type="text/javascript" src="/lib/smooth-scroll/smooth-scroll.min.js"></script><script type="text/javascript" src="/lib/lazysizes/lazysizes.min.js"></script><script type="text/javascript" src="/lib/clipboard/clipboard.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":10},"comment":{}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>
